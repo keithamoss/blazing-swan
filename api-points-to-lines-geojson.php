@@ -5,6 +5,10 @@ if(is_numeric($_GET['bikeid'])) {
     $stmt = $db->prepare("SELECT bikeid, MAX(timestamp) AS timestamp, group_concat(lon || \",\" || lat,  \";\") AS coordinates FROM topbikes WHERE bikeid=:bikeid ORDER BY timestamp ASC");
     $stmt->bindValue(':bikeid', $_GET['bikeid'], SQLITE3_INTEGER);
     $results = $stmt->execute();
+} elseif(is_numeric($_GET['limit'])) {
+    $stmt = $db->prepare("SELECT * FROM topbikes ORDER BY timestamp ASC LIMIT :limit");
+    $stmt->bindValue(':limit', $_GET['limit'], SQLITE3_INTEGER);
+    $results = $stmt->execute();
 } else {
     $results = $db->query("SELECT * FROM topbikes ORDER BY timestamp ASC");
 }

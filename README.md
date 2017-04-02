@@ -16,3 +16,5 @@ https://www.mapbox.com/help/gl-dds-ref/
 https://github.com/mapbox/mapbox-gl-js/issues/1764
 https://github.com/mapbox/mapbox-gl-js/pull/380
 https://github.com/mapbox/mapbox-gl-js/issues/61
+
+http://openlayers.org/en/latest/examples/symbol-atlas-webgl.html

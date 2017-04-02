@@ -7,6 +7,10 @@ if(is_numeric($_GET['timestamp'])) {
     $stmt = $db->prepare('SELECT * FROM topbikes WHERE timestamp>=:timestamp');
     $stmt->bindValue(':timestamp', $_GET['timestamp'], SQLITE3_INTEGER);
     $results = $stmt->execute();
+} elseif(is_numeric($_GET['limit'])) {
+    $stmt = $db->prepare("SELECT * FROM topbikes ORDER BY timestamp ASC LIMIT :limit");
+    $stmt->bindValue(':limit', $_GET['limit'], SQLITE3_INTEGER);
+    $results = $stmt->execute();
 } else {
     $results = $db->query("SELECT * FROM topbikes ORDER BY timestamp ASC");
 }
