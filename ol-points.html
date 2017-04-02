@@ -118,25 +118,25 @@
             maxZoom: 20
         });
 
-        var geojson_layer = new ol.layer.Vector({
-            source: new ol.source.Vector({
-                url: 'api-points-geojson.php',
-                // url: 'api-points-to-lines-geojson.php',
-                format: new ol.format.GeoJSON()
-            }),
-            style: styleFunction
-        });
-
-        // var geojson_layer = new ol.layer.Image({
-        //     source: new ol.source.ImageVector({
-        //       source: new ol.source.Vector({
-        //         // url: 'https://openlayers.org/en/v4.0.1/examples/data/geojson/countries.geojson',
-        //         url: '/api-points-geojson.php',
+        // var geojson_layer = new ol.layer.Vector({
+        //     source: new ol.source.Vector({
+        //         url: 'api-points-geojson.php',
+        //         // url: 'api-points-to-lines-geojson.php',
         //         format: new ol.format.GeoJSON()
-        //       }),
-        //       style: styleFunction
-        //     })
-        //   });
+        //     }),
+        //     style: styleFunction
+        // });
+
+        var geojson_layer = new ol.layer.Image({
+            source: new ol.source.ImageVector({
+              source: new ol.source.Vector({
+                // url: 'https://openlayers.org/en/v4.0.1/examples/data/geojson/countries.geojson',
+                url: '/api-points-geojson.php',
+                format: new ol.format.GeoJSON()
+              }),
+              style: styleFunction
+            })
+          });
 
         var map = new ol.Map({
             target: document.getElementById('map'),
