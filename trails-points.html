@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.34.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.34.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; background-color: black; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1Ijoia2VpdGhtb3NzIiwiYSI6ImNqMHlydWQwcjAyemsyd256ZmtnajVsbjEifQ.n2cW2LEKYHlDokt7GVVQrw';
+var map = new mapboxgl.Map({
+    container: 'map',
+    // style: 'mapbox://styles/mapbox/dark-v9',
+    style: {
+        "version": 8,
+        "sources": {
+            // "countries": {
+            //     "type": "vector",
+            //     // "url": "mapbox://map-id"
+            //     // "url": "http://tileserver.com/layer.json", 
+            //     // "tiles": [location.origin+location.pathname+"countries/{z}/{x}/{y}.pbf"],
+            //     // "maxzoom": 6
+            // }
+        },
+        // "glyphs": location.origin+location.pathname+"font/{fontstack}/{range}.pbf",
+        "layers": [],
+    },
+    // center: [115.6, -32],
+    center: [-73.96784384, 40.75206862],
+    zoom: 11
+});
+
+// var url = '/api.php?timestamp=1383210280';
+var url = 'api-points-geojson.php';
+// if(window.location.host == "govpond.org") {
+//     url = 'api-points-geojson.php'.replace(/php/, "json");
+// }
+
+map.on('load', function () {
+
+    map.addSource('drone', { type: 'geojson', data: url });
+    map.addLayer({
+        "id": "drone",
+        "type": "circle",
+        "source": "drone",
+        // "layout": {
+        //     "icon-image": "rocket-15"
+        // }
+        // "comp-op": "hard-light",
+        'paint': {
+            // make circles larger as the user zooms from z12 to z22
+            // 'circle-radius': {
+            //     'base': 1.75,
+            //     'stops': [[12, 2], [22, 180]]
+            // },
+            // "comp-op": "multiply",
+            "circle-radius": {
+                "property": "timestamp",
+                "type": "exponential",
+                "stops": [
+                    [{ "zoom": 15, "value": 1372658520 }, 2],
+                    [{ "zoom": 15, "value": 1425613741 }, 3],
+                    [{ "zoom": 15, "value": 1483202449 }, 5],
+                    [{ "zoom": 17, "value": 1372658520 }, 20],
+                    [{ "zoom": 17, "value": 1425613741 }, 30],
+                    [{ "zoom": 17, "value": 1483202449 }, 50],
+                    [{ "zoom": 20, "value": 1372658520 }, 40],
+                    [{ "zoom": 20, "value": 1425613741 }, 60],
+                    [{ "zoom": 20, "value": 1483202449 }, 100],
+                ]
+            },
+            // "circle-opacity": {
+            //     "property": "timestamp",
+            //     "type": "exponential",
+            //     "stops": [
+            //         [{ "zoom": 15, "value": 1372658520 }, 0.05],
+            //         [{ "zoom": 15, "value": 1425613741 }, 0.35],
+            //         [{ "zoom": 15, "value": 1483202449 }, 1],
+            //     ]
+            // },
+            "circle-blur": {
+                "property": "timestamp",
+                "type": "exponential",
+                "stops": [
+                    [{ "zoom": 15, "value": 1372658520 }, 10],
+                    [{ "zoom": 15, "value": 1425613741 }, 5],
+                    [{ "zoom": 15, "value": 1483202449 }, 0],
+                ]
+            },
+            // color circles by ethnicity, using data-driven styles
+            'circle-color': {
+                property: 'bikeid',
+                type: 'categorical',
+                stops: [
+                    // [14946, '#fbb03b'],
+                    // [17279, '#223b53'],
+                    // [19054, '#e55e5e'],
+                    // [20166, '#3bb2d0'],
+                    // [20625, '#ccc'],
+
+                    [15731, '#fbb03b'],
+                    [16941, '#223b53'],
+                    [17526, '#e55e5e'],
+                    [17747, '#3bb2d0'],
+                    [20233, '#ccc'],
+                ]
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.34.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.34.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1Ijoia2VpdGhtb3NzIiwiYSI6ImNqMHlydWQwcjAyemsyd256ZmtnajVsbjEifQ.n2cW2LEKYHlDokt7GVVQrw';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v9',
+    // center: [115.6, -32],
+    center: [-73.96784384, 40.75206862],
+    zoom: 11
+});
+
+// var url = '/api.php?timestamp=1383210280';
+var url = 'api-lines-geojson.php';
+
+map.on('load', function () {
+
+    map.addSource('drone', { type: 'geojson', data: url });
+    map.addLayer({
+        "id": "drone",
+        "type": "line",
+        "source": "drone",
+        // The identity function does not take a 'stops' property.
+        // Instead, the property value (in this case, 'color') on the source will be the direct output.
+        'paint': {
+            'line-width': 6,
+            'line-opacity': 0.25,
+            // 'line-blur': 10,
+            'line-color': {
+                'type': 'identity',
+                'property': 'colour',
+            }
+        }
+        // 'paint': {
+        //     // make circles larger as the user zooms from z12 to z22
+        //     'circle-radius': {
+        //         'base': 1.75,
+        //         'stops': [[12, 2], [22, 180]]
+        //     },
+        //     // color circles by ethnicity, using data-driven styles
+        //     'circle-color': {
+        //         property: 'bikeid',
+        //         type: 'categorical',
+        //         stops: [
+        //             [14946, '#fbb03b'],
+        //             [17279, '#223b53'],
+        //             [19054, '#e55e5e'],
+        //             [20166, '#3bb2d0'],
+        //             [20625, '#ccc'],
+        //         ]
+        //     }
+        // }
+    });
+});
+</script>
+
+</body>
+</html>

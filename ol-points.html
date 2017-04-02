@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Image Vector Layer</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v3.8.2/css/ol.css" type="text/css">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="https://openlayers.org/en/v3.8.2/build/ol.js"></script>
+  </head>
+  <body>
+    <style>
+        body {
+            background-color: black;
+        }
+    </style>
+
+    <div id="map" class="map"></div>
+    <script>
+        var key = 'pk.eyJ1Ijoia2VpdGhtb3NzIiwiYSI6ImNqMHlydWQwcjAyemsyd256ZmtnajVsbjEifQ.n2cW2LEKYHlDokt7GVVQrw';
+        var redPointStyle = new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 6,
+                fill: new ol.style.Fill({
+                    color: [203, 29, 29, 1]
+                }),
+                stroke: new ol.style.Stroke({color: '#cb1d1d', width: 1})
+            })
+        });
+        function logsliderradius(position) {
+            // position will be between 0 and 100
+            var minp = 1372658520;
+            var maxp = 1483202449;
+
+            // The result should be between 100 an 10000000
+            var minv = Math.log(1);
+            var maxv = Math.log(6);
+
+            // calculate adjustment factor
+            var scale = (maxv-minv) / (maxp-minp);
+
+            return Math.exp(minv + scale*(position-minp));
+        };
+        function logslideropacity(position) {
+            // position will be between 0 and 100
+            var minp = 1372658520;
+            var maxp = 1483202449;
+
+            // The result should be between 100 an 10000000
+            var minv = Math.log(10);
+            var maxv = Math.log(100);
+
+            // calculate adjustment factor
+            var scale = (maxv-minv) / (maxp-minp);
+
+            return Math.exp(minv + scale*(position-minp)) / 100;
+        };
+        function makePointStyle(bikeid, timestamp) {
+            var opacity = 0.1;
+            var radius = 1;
+
+            if(timestamp >= 1372658520 && timestamp < 1425613741) {
+                var opacity = 0.3;
+                var radius = 2;
+            } else if(timestamp >= 1425613741 && timestamp < 1483202449) {
+                var opacity = 0.8;
+                var radius = 6;
+            }
+            var opacity = logslideropacity(timestamp);
+            // console.log(opacity);
+            var radius = logsliderradius(timestamp);
+
+            var colours = {
+                15731: {"rgb": [251, 176, 59, opacity], "hex": "#fbb03b"},
+                16941: {"rgb": [34, 59, 83, opacity], "hex": "#223b53"},
+                17526: {"rgb": [229, 94, 94, opacity], "hex": "#e55e5e"},
+                17747: {"rgb": [59, 178, 208, opacity], "hex": "#3bb2d0"},
+                20233: {"rgb": [204, 204, 204, opacity], "hex": "#ccc"},
+            };
+            var colour = colours[bikeid];
+
+            return new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: radius,
+                    fill: new ol.style.Fill({
+                        color: colour["rgb"]
+                    }),
+                    // stroke: new ol.style.Stroke({color: colour["hex"], width: 1})
+                })
+            });
+        }
+        var redLineStyle = new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            color: 'red',
+            width: 8
+          })
+        });
+      
+        var styleCache = {};
+        var styleFunction = function(feature, resolution) {
+            var bikeid = feature.get("bikeid");
+            var timestamp = feature.get("timestamp");
+            var key = bikeid + timestamp;
+
+            if(styleCache[key] == undefined) {
+                styleCache[key] = makePointStyle(bikeid, timestamp)
+            }
+            return [styleCache[key]];
+
+            // console.log(feature.getGeometry().getType());
+            // console.log(feature.get("bikeid"));
+            return [redPointStyle];
+        };
+
+        var olview = new ol.View({
+            center: ol.proj.transform([-73.96784384, 40.75206862], 'EPSG:4326', 'EPSG:3857'),
+            zoom: 11,
+            minZoom: 2,
+            maxZoom: 20
+        });
+
+        var geojson_layer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: 'api-points-geojson.php',
+                // url: 'api-points-to-lines-geojson.php',
+                format: new ol.format.GeoJSON()
+            }),
+            style: styleFunction
+        });
+
+        // var geojson_layer = new ol.layer.Image({
+        //     source: new ol.source.ImageVector({
+        //       source: new ol.source.Vector({
+        //         // url: 'https://openlayers.org/en/v4.0.1/examples/data/geojson/countries.geojson',
+        //         url: '/api-points-geojson.php',
+        //         format: new ol.format.GeoJSON()
+        //       }),
+        //       style: styleFunction
+        //     })
+        //   });
+
+        var map = new ol.Map({
+            target: document.getElementById('map'),
+            // renderer: /** @type {ol.renderer.Type} */ ('webgl'),
+            view: olview,
+            layers: [
+                // new ol.layer.Tile({
+                //     source: new ol.source.XYZ({
+                //         url: 'https://api.mapbox.com/styles/v1/mapbox/dark-v9/tiles/256/{z}/{x}/{y}?access_token=' + key
+                //     })
+                // }),
+                // new ol.layer.Tile({
+                //     source: null
+                // }),
+                geojson_layer
+            ]
+        });
+
+
+        /**
+        * This method sets the globalCompositeOperation to the value of the select
+        * field and it is bound to the precompose event of the layers.
+        *
+        * @param {ol.render.Event} evt The render event.
+        */
+        var setBlendModeFromSelect = function(evt) {
+            // evt.context.globalCompositeOperation = select.value;
+            // evt.context.globalCompositeOperation = 'lighten';
+        };
+
+
+        /**
+        * This method resets the globalCompositeOperation to the default value of
+        * 'source-over' and it is bound to the postcompose event of the layers.
+        *
+        * @param {ol.render.Event} evt The render event.
+        */
+        var resetBlendModeFromSelect = function(evt) {
+            // evt.context.globalCompositeOperation = 'lighter';
+        };
+
+
+        /**
+        * Bind the pre- and postcompose handlers to the passed layer.
+        *
+        * @param {ol.layer.Vector} layer The layer to bind the handlers to.
+        */
+        var bindLayerListeners = function(layer) {
+            layer.on('precompose', setBlendModeFromSelect);
+            // layer.on('postcompose', resetBlendModeFromSelect);
+        };
+
+
+        /**
+        * Unind the pre- and postcompose handlers to the passed layers.
+        *
+        * @param {ol.layer.Vector} layer The layer to unbind the handlers from.
+        */
+        var unbindLayerListeners = function(layer) {
+            // layer.un('precompose', setBlendModeFromSelect);
+            // layer.un('postcompose', resetBlendModeFromSelect);
+        };
+
+        // Initially bind listeners
+        bindLayerListeners(geojson_layer);
+    </script>
+  </body>
+</html>
