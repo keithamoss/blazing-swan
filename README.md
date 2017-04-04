@@ -18,3 +18,15 @@ https://github.com/mapbox/mapbox-gl-js/pull/380
 https://github.com/mapbox/mapbox-gl-js/issues/61
 
 http://openlayers.org/en/latest/examples/symbol-atlas-webgl.html
+
+# Spatialite
+https://github.com/lokkju/pyspatialite/issues/18
+
+`brew install proj geos`
+
+CFLAGS="-I/usr/local/Cellar/proj/4.9.2/include -I/usr/local/Cellar/geos/3.5.0/include" pip install --pre pyspatialite
+
+pip install pyspatialite==2.6.2-spatialite.2.4.0-4
+Fucked.
+
+pip install pyspatialite==2.6.2-spatialite.2.3.1
