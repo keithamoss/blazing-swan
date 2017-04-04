@@ -1,0 +1,62 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Blazing Swan</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style type="text/css">
+            /*
+                Courtesy of CSS Tricks
+                https://css-tricks.com/perfect-full-page-background-image/#article-header-id-2
+            */
+            body {
+                background-color: #000000;
+            }
+
+            #bg {
+                position: fixed; 
+                top: -50%; 
+                left: -50%; 
+                width: 200%; 
+                height: 200%;
+            }
+
+            #bg img {
+                position: absolute; 
+                top: 0; 
+                left: 0; 
+                right: 0; 
+                bottom: 0; 
+                margin: auto; 
+                max-width: 50%;
+                max-height: 50%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="bg">
+            <img id="map" src="mapserver/bikes.png" alt="">
+        </div>
+
+        <!-- This is overkill! -->
+        <script src="jquery-1.12.0.min.js"></script>
+
+        <script>
+        // Refresh via Ajax to prevent the image loading flash
+        var intervalId = window.setInterval(function() {
+            $.ajax({
+                url: "mapserver/bikes.php",
+                data: {
+                    "foo": Math.random()
+                },
+                success: function(data, textStatus) {
+                    $("#map").attr("src", "data:image/png;base64," + data);
+                }
+            });
+        }, 1000);
+        </script>
+    </body>
+</html>
