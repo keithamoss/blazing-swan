@@ -19,8 +19,9 @@ else:
     # Create `bikes` table
     cur.execute("CREATE TABLE 'bikes' ( ogc_fid INTEGER PRIMARY KEY, 'bikeid' INTEGER, 'timestamp' INTEGER)")
 
-    # Register our `bikes` geometry point column
-    cur.execute("SELECT AddGeometryColumn('bikes', 'geom', 4326, 'POINT', 'XY')")
+    # Register our `bikes` geometry column
+    # cur.execute("SELECT AddGeometryColumn('bikes', 'geom', 4326, 'POINT', 'XY')")
+    cur.execute("SELECT AddGeometryColumn('bikes', 'geom', 4326, 'LINESTRING', 'XY')")
     
     conn.close()
     print "Table `bikes` initialised succesfully."
