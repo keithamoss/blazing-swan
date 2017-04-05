@@ -1,0 +1,73 @@
+MAP
+    # CONFIG "MS_ERRORFILE" "./ms_error.txt"
+    # DEBUG 5
+
+    NAME "sample"
+    STATUS ON
+    # SIZE 1920 1080
+    SIZE 1024 768
+    # SYMBOLSET "../etc/symbols.txt"
+    
+    # New York
+    # EXTENT -74.12 40.69 -73.8 40.8
+    # Blazing Swan
+    EXTENT 114 -34 119 -31
+
+    UNITS DD
+    SHAPEPATH "./data"
+    IMAGECOLOR 0 0 0
+    # FONTSET "../etc/fonts.txt"
+
+    #
+    # Start of web interface definition
+    #
+    WEB
+        IMAGEPATH "/ms4w/tmp/ms_tmp/"
+        IMAGEURL "/ms_tmp/"
+    END # WEB
+
+    SYMBOL
+        NAME "circle"
+        TYPE ellipse
+        FILLED true
+        POINTS
+            1 1
+        END
+    END
+
+    #
+    # Start of layer definitions
+    #
+    LAYER
+        NAME bikes
+        TYPE LINE
+        STATUS DEFAULT
+        CONNECTIONTYPE OGR
+        CONNECTION "bikes.sqlite"
+        DATA "bikes"
+        # DATA "select * from ogrgeojson"
+        # DATA "select geometry from 50_points"
+        # DATA "select GEOMETRY from 50_points where bikeid = 15731"
+        {BIKE_CLASSES}
+    END
+
+    LAYER
+        NAME church
+        TYPE POINT
+        STATUS DEFAULT
+        FEATURE
+            POINTS
+                118.332136 -32.661991
+            END # End Points
+        END # End Feature
+        CLASS
+            NAME "Base Marker"
+            STYLE
+                SYMBOL "circle"
+                # SYMBOL "./icons/church.png"
+                SIZE 15
+                COLOR 0 176 0
+            END
+        END
+    END
+END # MAP
