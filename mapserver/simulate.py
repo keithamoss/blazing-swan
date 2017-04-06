@@ -4,7 +4,7 @@ import random
 import time
 
 # CONFIG START
-featuresToCreate = 500 # Features to create per bike
+featuresToCreate = 5 # Features to create per bike
 sleepTime = 0 # seconds - set to 0 to disable sleeping between inserting each point
 timestampRangeStart = 538613889
 timestampRangeEnd = timestampRangeStart + (60 * 60 * 24 * 5)
@@ -27,8 +27,8 @@ else:
     for bikeid in range(bikeIdMin, bikeIdMax + 1):
         points[bikeid] = []
         for i in range(0, featuresToCreate):
-            lat = random.uniform(117.5, 118.8)
-            lon = random.uniform(-32, -33.5)
+            lon = random.uniform(117.5, 118.8)
+            lat = random.uniform(-32, -33.5)
             points[bikeid].append({"lat": lat, "lon": lon})
 
     # Create a new feature every n seconds
@@ -38,7 +38,7 @@ else:
             nextpoint = points[bikeid][i+1]
             timestamp = random.randrange(timestampRangeStart, timestampRangeEnd)
 
-            sql = "INSERT INTO bikes (bikeid, timestamp, geom) VALUES (%d, %d, GeomFromText('LINESTRING(%f %f, %f %f)', 4326))" % (bikeid, timestamp, point["lat"], point["lon"], nextpoint["lat"], nextpoint["lon"])
+            sql = "INSERT INTO bikes (bikeid, timestamp, geom) VALUES (%d, %d, GeomFromText('LINESTRING(%f %f, %f %f)', 4326))" % (bikeid, timestamp, point["lon"], point["lat"], nextpoint["lon"], nextpoint["lat"])
             print sql
 
             cur.execute(sql)
