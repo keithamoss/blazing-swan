@@ -11,8 +11,11 @@ MAP
     # New York
     # EXTENT -74.12 40.69 -73.8 40.8
     
-    # Blazing Swan
-    EXTENT 117.4 -33.6 118.9 -31.9
+    # Blazing Swan (Rough)
+    # EXTENT 117.4 -33.6 118.9 -31.9
+
+    # Blazing Swan (Precise)
+    EXTENT 118.325 -32.6645 118.336 -32.654
 
     UNITS DD
     SHAPEPATH "./data"

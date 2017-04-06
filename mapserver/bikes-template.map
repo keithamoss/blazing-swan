@@ -11,8 +11,11 @@ MAP
     # New York
     # EXTENT -74.12 40.69 -73.8 40.8
     
-    # Blazing Swan
-    EXTENT 117.4 -33.6 118.9 -31.9
+    # Blazing Swan (Rough)
+    # EXTENT 117.4 -33.6 118.9 -31.9
+
+    # Blazing Swan (Precise)
+    EXTENT 118.325 -32.6645 118.336 -32.654
 
     UNITS DD
     SHAPEPATH "./data"
@@ -50,6 +53,44 @@ MAP
         # DATA "select geometry from 50_points"
         # DATA "select GEOMETRY from 50_points where bikeid = 15731"
         {BIKE_CLASSES}
+    END
+
+    LAYER
+        NAME topleft
+        TYPE POINT
+        STATUS DEFAULT
+        FEATURE
+            POINTS
+                118.324881 -32.654135
+            END # End Points
+        END # End Feature
+        CLASS
+            NAME "Base Marker"
+            STYLE
+                SYMBOL "circle"
+                SIZE 7
+                COLOR 255 0 0
+            END
+        END
+    END
+
+    LAYER
+        NAME bottomright
+        TYPE POINT
+        STATUS DEFAULT
+        FEATURE
+            POINTS
+                118.335644 -32.664092
+            END # End Points
+        END # End Feature
+        CLASS
+            NAME "Base Marker"
+            STYLE
+                SYMBOL "circle"
+                SIZE 7
+                COLOR 0 0 255
+            END
+        END
     END
 
     LAYER
