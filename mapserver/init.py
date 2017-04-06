@@ -22,6 +22,11 @@ else:
     # Register our `bikes` geometry column
     # cur.execute("SELECT AddGeometryColumn('bikes', 'geom', 4326, 'POINT', 'XY')")
     cur.execute("SELECT AddGeometryColumn('bikes', 'geom', 4326, 'LINESTRING', 'XY')")
+
+    # Use Write Ahead Logging (WAL) mode to allow simultaneous read/write on tables
+    # http://stackoverflow.com/a/22708807
+    # https://sqlite.org/wal.html
+    cur.execute('PRAGMA journal_mode=wal')
     
     conn.close()
     print "Table `bikes` initialised succesfully."
