@@ -192,12 +192,18 @@ def createMapfile():
                 stepStartMinTimestamp = timestampsPerBike[bikeid]["min"]
                 stepTimestampCounter = latestMinTimestamp
                 stepStartOpacity = opacityStepMinActual
+                individualBikeClasses = []
                 for step in range (1, fadingTrailsSteps + 1):
                     # print "Step %s" % (step)
                     # latestMinTimestamp -= timestampDiff
 
                     # stepMinTimestamp = timestampsPerBike[bikeid]["min"]
                     stepMaxTimestamp = stepStartMinTimestamp + timestampIncrementSeconds
+                    # if stepMaxTimestamp > latestMinTimestamp:
+
+                    # For the last step (i.e. the step closest to latestTrailsClass) make sure our max timestamp is exactly the min timestamp of latestTrailsClass
+                    if step == fadingTrailsSteps:
+                        stepMaxTimestamp = latestMinTimestamp
 
                     stepOpacity = stepStartOpacity + opacityIncrement
                     # print "stepOpacity %s" % (stepOpacity)
@@ -210,13 +216,17 @@ def createMapfile():
                     trailsClass = trailsClass.replace("{OPACITY}", str(stepOpacity))
                     trailsClass = trailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
                     # print trailsClass
-                    bikeClasses.append(trailsClass)
+                    # bikeClasses.append(trailsClass)
+                    individualBikeClasses.append(trailsClass)
 
                     # if (latestMinTimestamp - timestampDiff) < 0:
                     #     break
 
-                    stepStartMinTimestamp = stepMaxTimestamp + 1
+                    stepStartMinTimestamp = stepMaxTimestamp
                     stepStartOpacity = stepOpacity
+                
+                # Reverse classes for this bike so more recent classes (timestamps) are at the top
+                bikeClasses += list(reversed(individualBikeClasses))
         
         # print
 
@@ -304,7 +314,7 @@ else:
             # else:
             #     print "Snapshot pending! (%s vs %s)" % ((snapshotCounter * sleepTime), (snapshotInterval * 60))
 
-            print "Map generated OK %s." % (time.strftime("%Y-%m-%d-%H-%M-%S"))
+            print "Map generated OK %s" % (time.strftime("%Y-%m-%d-%H-%M-%S"))
         
         sys.stdout.flush()
         time.sleep(sleepTime)
