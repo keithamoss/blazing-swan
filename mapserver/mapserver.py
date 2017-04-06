@@ -40,9 +40,33 @@ snapshotCounter = None
 halfAnHour = 60 * 30
 churchFrameNum = 19
 churchFramePosition = 0
+hourIncrementStart = 0
 
 # Get min and max timestamps per bike
 def getBikeTimestamps():
+    global hourIncrementStart
+    
+    timestampsPerBike = {}
+    # timestampsPerBikeFoo = {}
+    # sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes GROUP BY bikeid"
+    # for row in cur.execute(sql):
+    #     timestampsPerBikeFoo[row[0]] = {
+    #         "min": row[1],
+    #         "max": row[2],
+    #         "minThreshold": row[2] - (latestTrailsThresholdHours * 60 * 60) - (60 * 60 * hourIncrementStart)
+    #     }
+    
+    # for bikeid in timestampsPerBikeFoo:
+    #     sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes WHERE bikeid = %s AND timestamp >= %s GROUP BY bikeid" % (bikeid, timestampsPerBikeFoo[bikeid]["minThreshold"])
+    #     # sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes WHERE bikeid = %s GROUP BY bikeid" % (bikeid)
+
+    #     cur.execute(sql)
+    #     res = cur.fetchone()
+    #     timestampsPerBike[bikeid] = {
+    #         "min": res[1],
+    #         "max": res[2],
+    #     }
+    
     timestampsPerBike = {}
     sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes GROUP BY bikeid"
     for row in cur.execute(sql):
@@ -122,7 +146,7 @@ def createMapfile():
 
     bikeTrailsClassTemplate = """
         CLASS
-            NAME "Bike {BIKEID}"
+            NAME "Bike {BIKEID} ({HOURS})"
             EXPRESSION ([bikeid] eq {BIKEID} AND [timestamp] >= {MINTIMESTAMP} AND [timestamp] < {MAXTIMESTAMP})
             STYLE
                 WIDTH 1
@@ -135,17 +159,16 @@ def createMapfile():
     bikeClasses = []
 
     timestampsPerBike = getBikeTimestamps()
-    # print timestampsPerBike
 
     for bikeid in timestampsPerBike:
-        # print bikeid
+        # print
+        # print "## Bikeid %s" % (bikeid)
 
         if noSteps:
             latestTrailsClass = bikeTrailsClassTemplateLatestNoTimestamp
             latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
             latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "70")
             latestTrailsClass = latestTrailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
-            # print latestTrailsClass
             bikeClasses.append(latestTrailsClass)
 
         else:
@@ -157,7 +180,6 @@ def createMapfile():
             latestTrailsClass = latestTrailsClass.replace("{MINTIMESTAMP}", str(latestMinTimestamp))
             latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "70")
             latestTrailsClass = latestTrailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
-            # print latestTrailsClass
             bikeClasses.append(latestTrailsClass)
 
             if onlyTwoSteps:
@@ -166,69 +188,59 @@ def createMapfile():
                 latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
                 latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "50")
                 latestTrailsClass = latestTrailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
-                # print latestTrailsClass
                 bikeClasses.append(latestTrailsClass)
 
             else:
-                # timestampsPerBike[bikeid]["min"] = latestMinTimestamp - (60 * 30)
-
-                # Throw every after the last 3 hours into buckets
-                # print "opacityStepMin %s" % (opacityStepMin)
-                opacityStepMinActual = opacityStepMin
-                # print "opacityStepMinActual %s" % (opacityStepMinActual)
+                opacityStepMaxActual = opacityStepMax
                 timestampDiff = latestMinTimestamp - timestampsPerBike[bikeid]["min"]
-                # print "timestampDiff = %s" % (timestampDiff)
                 timestampIncrementSeconds = int(round(timestampDiff / fadingTrailsSteps))
-                # timestampIncrementSeconds = max(timestampIncrementSeconds, 60 * 60) # Each increment must be at least one hour
-                # print "timestampIncrementSeconds = %s" % (timestampIncrementSeconds)
 
                 # Opacity step size
-                opacityIncrement = (opacityStepMax - opacityStepMinActual) / fadingTrailsSteps
+                opacityIncrement = (opacityStepMaxActual - opacityStepMin) / fadingTrailsSteps
 
-                # Minimum step size of 1 hour
-                # if timestampIncrementSeconds < (60 * 60):
-                #     fadingTrailsSteps = 1
-                    
-                stepStartMinTimestamp = timestampsPerBike[bikeid]["min"]
-                stepTimestampCounter = latestMinTimestamp
-                stepStartOpacity = opacityStepMinActual
-                individualBikeClasses = []
-                for step in range (1, fadingTrailsSteps + 1):
+                stepsInHours = []
+                timestampDiffRemaining = timestampDiff
+                for step in reversed(range(1, fadingTrailsSteps + 1)):
+                    haltStepping = False
                     # print "Step %s" % (step)
-                    # latestMinTimestamp -= timestampDiff
 
-                    # stepMinTimestamp = timestampsPerBike[bikeid]["min"]
-                    stepMaxTimestamp = stepStartMinTimestamp + timestampIncrementSeconds
-                    # if stepMaxTimestamp > latestMinTimestamp:
+                    stepSize = timestampDiffRemaining / 2
+                    timestampDiffRemaining -= stepSize
 
-                    # For the last step (i.e. the step closest to latestTrailsClass) make sure our max timestamp is exactly the min timestamp of latestTrailsClass
-                    if step == fadingTrailsSteps:
-                        stepMaxTimestamp = latestMinTimestamp
+                    if stepSize < (60 * 60 * 3):
+                        haltStepping = True
+                        stepSize = (60 * 60 * 3)
+                        
+                    stepsInHours.append(stepSize / (60 * 60))
 
-                    stepOpacity = stepStartOpacity + opacityIncrement
-                    # print "stepOpacity %s" % (stepOpacity)
-                    # stepOpacity = 10
+                    if haltStepping:
+                        break
+                stepsInHours = list(reversed(stepsInHours))
+
+
+                stepStartMaxTimestamp = latestMinTimestamp
+                stepStartOpacity = opacityStepMaxActual
+                timestampDiffRemaining = timestampDiff
+                for i, stepHours in enumerate(stepsInHours):
+                    # print "Step %s (%shrs)" % (i, stepHours)
+
+                    stepMinTimestamp = stepStartMaxTimestamp - (stepHours * (60 * 60))
+                    if stepMinTimestamp < timestampsPerBike[bikeid]["min"]:
+                        stepMinTimestamp = timestampsPerBike[bikeid]["min"]
+
+                    stepOpacity = stepStartOpacity - opacityIncrement
 
                     trailsClass = bikeTrailsClassTemplate
                     trailsClass = trailsClass.replace("{BIKEID}", str(bikeid))
-                    trailsClass = trailsClass.replace("{MINTIMESTAMP}", str(stepStartMinTimestamp))
-                    trailsClass = trailsClass.replace("{MAXTIMESTAMP}", str(stepMaxTimestamp))
+                    trailsClass = trailsClass.replace("{HOURS}", str(stepHours))
+                    trailsClass = trailsClass.replace("{MINTIMESTAMP}", str(stepMinTimestamp))
+                    trailsClass = trailsClass.replace("{MAXTIMESTAMP}", str(stepStartMaxTimestamp))
                     trailsClass = trailsClass.replace("{OPACITY}", str(stepOpacity))
                     trailsClass = trailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
-                    # print trailsClass
-                    # bikeClasses.append(trailsClass)
-                    individualBikeClasses.append(trailsClass)
+                    bikeClasses.append(trailsClass)
 
-                    # if (latestMinTimestamp - timestampDiff) < 0:
-                    #     break
-
-                    stepStartMinTimestamp = stepMaxTimestamp
+                    stepStartMaxTimestamp = stepMinTimestamp
                     stepStartOpacity = stepOpacity
-                
-                # Reverse classes for this bike so more recent classes (timestamps) are at the top
-                bikeClasses += list(reversed(individualBikeClasses))
-        
-        # print
 
     template = getTemplateMapfile()
     # print template
@@ -256,6 +268,8 @@ if not os.path.isfile(sqlitePath):
 else:
     while True:
         mapserverOK = None
+        hourIncrementStart += 1
+        # print "Hour %s (Days %s)" % (hourIncrementStart, hourIncrementStart / 24)
 
         # Always take a snapshot the first time we run
         if snapshotCounter == None:

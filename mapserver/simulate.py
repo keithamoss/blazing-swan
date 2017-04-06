@@ -4,7 +4,7 @@ import random
 import time
 
 # CONFIG START
-featuresToCreate = 5 # Features to create per bike
+featuresToCreate = 50 # Features to create per bike
 sleepTime = 0 # seconds - set to 0 to disable sleeping between inserting each point
 timestampRangeStart = 538613889
 timestampRangeEnd = timestampRangeStart + (60 * 60 * 24 * 5)
@@ -27,8 +27,8 @@ else:
     for bikeid in range(bikeIdMin, bikeIdMax + 1):
         points[bikeid] = []
         for i in range(0, featuresToCreate):
-            lon = random.uniform(117.5, 118.8)
-            lat = random.uniform(-32, -33.5)
+            lon = random.uniform(118.336, 118.325)
+            lat = random.uniform(-32.654, -32.6645)
             points[bikeid].append({"lat": lat, "lon": lon})
 
     # Create a new feature every n seconds
