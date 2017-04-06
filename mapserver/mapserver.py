@@ -1,9 +1,10 @@
 from pyspatialite import dbapi2 as db
-from subprocess import call
+from subprocess import check_output
 from shutil import copyfile
 import os
 import random
 import time
+import imghdr
 
 # CONFIG START
 sleepTime = 1 # seconds - time to sleep after generating a map image
@@ -30,10 +31,11 @@ opacityStepMax = 60
 
 # sqlitePath = "./data/bikes.sqlite"
 sqlitePath = "./data/bikes.sqlite"
-mapfilePath = "./bikes.map" # If not "bikes.map" then automatic mapfile generation is DISABLED
+mapfilePath = "./bikes.map"
 mapfileTemplate = "./bikes-template.map"
 conn = db.connect(sqlitePath, timeout=3)
 cur = conn.cursor()
+snapshotCounter = None
 halfAnHour = 60 * 30
 churchFrameNum = 19
 churchFramePosition = 0
@@ -51,7 +53,7 @@ def getBikeTimestamps():
 
 # Create a mapfile with the correct styling rules for the current point in time
 def createMapfile():
-    global fadingTrailsSteps, churchFramePosition
+    global mapfilePath, mapfileTemplate, fadingTrailsSteps, churchFramePosition
 
     def getTemplateMapfile():
         with open(mapfileTemplate, "r") as f:
@@ -221,9 +223,11 @@ def createMapfile():
     # print "\n\n".join(bikeClasses)
 
     with open(mapfilePath, "w") as f:
-        # content = f.read()
-        # print content
-        content = template.replace("{BIKE_CLASSES}", "".join(bikeClasses))
+        content = template
+        
+        # Only generate a new mapfile if we're using bikes.map
+        if mapfileTemplate == "./bikes-template.map":
+            content = content.replace("{BIKE_CLASSES}", "".join(bikeClasses))
 
         content = content.replace("{CHURCH_FRAME_NUM}", str(churchFramePosition).zfill(5))
         churchFramePosition += 1
@@ -233,24 +237,46 @@ def createMapfile():
         f.write(content)
 
 
-snapshotCounter = 0
 
 if not os.path.isfile(sqlitePath):
     print "Error: Database %s doesn't exist." % (sqlitePath)
 
 else:
     while True:
-        snapshotCounter += 1
+        mapserverOK = None
 
-        if mapfilePath == "./bikes.map":
-            createMapfile()
-            # exit()
+        # Always take a snapshot the first time we run
+        if snapshotCounter == None:
+            snapshotCounter = snapshotInterval * 60
+        else:
+            snapshotCounter += 1
+
+        # Generate a new mapfile appropriate for the timestamps currently in the database
+        # Used to fade features out over time
+        createMapfile()
 
         if os.path.isfile("./bikes.tmp.png"):
             os.remove("./bikes.tmp.png")
         
         with open("./bikes.tmp.png", "w+") as f:
-            call(["mapserv", "-nh", "QUERY_STRING=map=" + mapfilePath + "&mode=map"], stdout=f)
+            ret = check_output(["mapserv", "-nh", "QUERY_STRING=map=" + mapfilePath + "&mode=map"])
+            # print ret
+            type = imghdr.what(None, h=ret)
+
+            if type == "png":
+                # All OK!
+                mapserverOK = True
+                f.write(ret)
+            else:
+                # Something wrong in MapServer-land!
+                mapserverOK = False
+
+                print "ERROR: MapServer returned a file of type '%s'! Using ./snapshots/map-latest.png instead." % (type)
+                print ret
+                print
+
+                with open("./snapshots/map-latest.png", "r") as fl:
+                    f.write(fl.read())
 
         # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
         # tl;dr This doens't work on Windows or across different file systems.
@@ -263,19 +289,23 @@ else:
         #     os.remove("./bikes.png")
         # os.rename("./bikes.tmp.png", "./bikes.png")
 
-        if (snapshotCounter * sleepTime) >= (snapshotInterval * 60):
-            print "Snapshot!"
-            snapshotCounter = 0
+        # Only snapshot if everything is OK in MapServer-land
+        if mapserverOK == True:
+            if (snapshotCounter * sleepTime) >= (snapshotInterval * 60):
+                print "Snapshot taken!"
+                snapshotCounter = 0
 
-            copyfile("./bikes.png", "./snapshots/map-%s.png" % (time.strftime("%Y-%m-%d-%H-%M-%S")))
+                copyfile("./bikes.png", "./snapshots/map-%s.png" % (time.strftime("%Y-%m-%d-%H-%M-%S")))
 
-            if os.path.isfile("./snapshots/map-latest.png"):
-                os.remove("./snapshots/map-latest.png")
-            copyfile("./bikes.png", "./snapshots/map-latest.png")
-        else:
-            print "Snapshot pending! (%s vs %s)" % ((snapshotCounter * sleepTime), (snapshotInterval * 60))
+                if os.path.isfile("./snapshots/map-latest.png"):
+                    os.remove("./snapshots/map-latest.png")
+                copyfile("./bikes.png", "./snapshots/map-latest.png")
+            # else:
+            #     print "Snapshot pending! (%s vs %s)" % ((snapshotCounter * sleepTime), (snapshotInterval * 60))
 
-        print "Map generated."
+            print "Map generated OK."
         time.sleep(sleepTime)
+
+        # exit()
     
     # conn.close()
