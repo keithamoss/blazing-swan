@@ -5,6 +5,7 @@ import os
 import random
 import time
 import imghdr
+import sys
 
 # CONFIG START
 sleepTime = 1 # seconds - time to sleep after generating a map image
@@ -60,6 +61,7 @@ def createMapfile():
             template = f.read()
         return template
     
+    # RGB
     bikeStyles = {
         1: {
             "colour": "251 176 59"
@@ -239,7 +241,7 @@ def createMapfile():
 
 
 if not os.path.isfile(sqlitePath):
-    print "Error: Database %s doesn't exist." % (sqlitePath)
+    print "ERROR: Database %s doesn't exist." % (sqlitePath)
 
 else:
     while True:
@@ -260,7 +262,6 @@ else:
         
         with open("./bikes.tmp.png", "w+") as f:
             ret = check_output(["mapserv", "-nh", "QUERY_STRING=map=" + mapfilePath + "&mode=map"])
-            # print ret
             type = imghdr.what(None, h=ret)
 
             if type == "png":
@@ -303,9 +304,11 @@ else:
             # else:
             #     print "Snapshot pending! (%s vs %s)" % ((snapshotCounter * sleepTime), (snapshotInterval * 60))
 
-            print "Map generated OK."
+            print "Map generated OK %s." % (time.strftime("%Y-%m-%d-%H-%M-%S"))
+        
+        sys.stdout.flush()
         time.sleep(sleepTime)
 
         # exit()
     
-    # conn.close()
+    conn.close()
