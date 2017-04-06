@@ -6,10 +6,11 @@ import random
 import time
 
 # CONFIG START
-sleepTime = 2 # seconds - time to sleep after generating a map image
+sleepTime = 1 # seconds - time to sleep after generating a map image
 snapshotInterval = 10 # minutes - how often snapshots are saved to ./snapshots
 
 #
+# We have three different viz options
 # Set noSteps = True to have all trails at 70% opacity.
 
 # Set onlyTwoSteps = True and noSteps = False to have all trails from the last `latestTrailsThresholdHours` hours at 70% opacity, and all older trails at 50% opacity.
@@ -31,10 +32,11 @@ opacityStepMax = 60
 sqlitePath = "./data/bikes.sqlite"
 mapfilePath = "./bikes.map" # If not "bikes.map" then automatic mapfile generation is DISABLED
 mapfileTemplate = "./bikes-template.map"
-conn = db.connect(sqlitePath)
+conn = db.connect(sqlitePath, timeout=3)
 cur = conn.cursor()
 halfAnHour = 60 * 30
-
+churchFrameNum = 19
+churchFramePosition = 0
 
 # Get min and max timestamps per bike
 def getBikeTimestamps():
@@ -49,7 +51,7 @@ def getBikeTimestamps():
 
 # Create a mapfile with the correct styling rules for the current point in time
 def createMapfile():
-    global fadingTrailsSteps
+    global fadingTrailsSteps, churchFramePosition
 
     def getTemplateMapfile():
         with open(mapfileTemplate, "r") as f:
@@ -222,6 +224,12 @@ def createMapfile():
         # content = f.read()
         # print content
         content = template.replace("{BIKE_CLASSES}", "".join(bikeClasses))
+
+        content = content.replace("{CHURCH_FRAME_NUM}", str(churchFramePosition).zfill(5))
+        churchFramePosition += 1
+        if churchFramePosition > churchFrameNum:
+            churchFramePosition = 0
+
         f.write(content)
 
 

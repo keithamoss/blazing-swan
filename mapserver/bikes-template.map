@@ -67,10 +67,8 @@ MAP
         CLASS
             NAME "Base Marker"
             STYLE
-                SYMBOL "circle"
-                # SYMBOL "./icons/church.png"
-                SIZE 15
-                COLOR 0 176 0
+                SYMBOL "./icons/church_sim_png/church_sim_{CHURCH_FRAME_NUM}.png"
+                SIZE 120
             END
         END
     END
