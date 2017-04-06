@@ -56,44 +56,6 @@ MAP
     END
 
     LAYER
-        NAME topleft
-        TYPE POINT
-        STATUS DEFAULT
-        FEATURE
-            POINTS
-                118.324881 -32.654135
-            END # End Points
-        END # End Feature
-        CLASS
-            NAME "Base Marker"
-            STYLE
-                SYMBOL "circle"
-                SIZE 7
-                COLOR 255 0 0
-            END
-        END
-    END
-
-    LAYER
-        NAME bottomright
-        TYPE POINT
-        STATUS DEFAULT
-        FEATURE
-            POINTS
-                118.335644 -32.664092
-            END # End Points
-        END # End Feature
-        CLASS
-            NAME "Base Marker"
-            STYLE
-                SYMBOL "circle"
-                SIZE 7
-                COLOR 0 0 255
-            END
-        END
-    END
-
-    LAYER
         NAME church
         TYPE POINT
         STATUS DEFAULT
