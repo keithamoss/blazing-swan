@@ -17,6 +17,9 @@ MAP
     # Blazing Swan (Precise)
     EXTENT 118.325 -32.6645 118.336 -32.654
 
+    # Hyde Park
+    # EXTENT 115.859454 -31.940463 115.866233 -31.93651
+
     UNITS DD
     SHAPEPATH "./data"
     IMAGECOLOR 0 0 0
@@ -48,7 +51,8 @@ MAP
         STATUS DEFAULT
         CONNECTIONTYPE OGR
         CONNECTION "bikes.sqlite"
-        DATA "bikes"
+        DATA "{DATA_QUERY}"
+        # DATA "bikes"
         CLASS
             NAME "Bike 1"
             EXPRESSION ([bikeid] eq 1)
@@ -99,6 +103,8 @@ MAP
             END
         END
     END # End Layer
+
+    {CURRENT_BIKE_LOCATIONS}
 
     LAYER
         NAME church

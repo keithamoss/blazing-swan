@@ -9,8 +9,8 @@ import imghdr
 import sys
 
 # CONFIG START
-sleepTime = 0 # seconds - time to sleep after generating a map image
-snapshotInterval = 0.2 # minutes - how often snapshots are saved to ./snapshots
+sleepTime = 1 # seconds - time to sleep after generating a map image
+snapshotInterval = 10 # minutes - how often snapshots are saved to ./snapshots
 
 #
 # We have three different viz options
@@ -39,7 +39,7 @@ showCurrentBikePositions = False
 
 
 # sqlitePath = "./data/bikes.sqlite"
-sqlitePath = "./data/bikes-hyde-park.sqlite"
+sqlitePath = "./data/bikes.sqlite"
 mapfilePath = "./bikes.map"
 mapfileTemplate = "./bikes-template.map"
 conn = db.connect(sqlitePath, timeout=3)
