@@ -56,6 +56,11 @@ def getMinTimestampAllBikes():
     cur.execute(sql)
     return cur.fetchone()[0]
 
+def getMaxTimestampAllBikes():
+    sql = "SELECT MAX(timestamp) FROM bikes"
+    cur.execute(sql)
+    return cur.fetchone()[0]
+
 def getCurrentBikePositions():
     sql = "SELECT bikeid, ST_X(PointN(geom, 2)), ST_Y(PointN(geom, 2)) FROM bikes GROUP BY bikeid ORDER BY timestamp DESC"
     if replayMode:
@@ -169,7 +174,7 @@ def createMapfile():
 
     bikeTrailsClassTemplateLatest = """
         CLASS
-            NAME "Bike {BIKEID}"
+            NAME "Bike {BIKEID} ({HOURS} hours)"
             EXPRESSION ([bikeid] eq {BIKEID} AND [timestamp] >= {MINTIMESTAMP})
             STYLE
                 WIDTH 1
@@ -181,7 +186,7 @@ def createMapfile():
 
     bikeTrailsClassTemplate = """
         CLASS
-            NAME "Bike {BIKEID} ({HOURS})"
+            NAME "Bike {BIKEID} ({HOURS} hours)"
             EXPRESSION ([bikeid] eq {BIKEID} AND [timestamp] >= {MINTIMESTAMP} AND [timestamp] < {MAXTIMESTAMP})
             STYLE
                 WIDTH 1
@@ -216,6 +221,7 @@ def createMapfile():
     bikeClasses = []
 
     timestampsPerBike = getBikeTimestamps()
+    # print timestampsPerBike
 
     for bikeid in timestampsPerBike:
         # print
@@ -234,6 +240,7 @@ def createMapfile():
 
             latestTrailsClass = bikeTrailsClassTemplateLatest
             latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
+            latestTrailsClass = latestTrailsClass.replace("{HOURS}", str(latestTrailsThresholdHours))
             latestTrailsClass = latestTrailsClass.replace("{MINTIMESTAMP}", str(latestMinTimestamp))
             latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "70")
             latestTrailsClass = latestTrailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
@@ -266,11 +273,13 @@ def createMapfile():
 
                     if stepSize < (60 * 60 * 3):
                         haltStepping = True
-                        stepSize = (60 * 60 * 3)
+                        # stepSize = (60 * 60 * 3)
                         
-                    stepsInHours.append(stepSize / (60 * 60))
+                    stepsInHours.append(float(stepSize) / (60 * 60))
 
                     if haltStepping:
+                        # print "Halting %s (%s)" % (timestampDiffRemaining, float(timestampDiffRemaining) / (60 * 60))
+                        stepsInHours.append(float(timestampDiffRemaining) / (60 * 60))
                         break
                 stepsInHours = list(reversed(stepsInHours))
 
@@ -290,8 +299,8 @@ def createMapfile():
                     trailsClass = bikeTrailsClassTemplate
                     trailsClass = trailsClass.replace("{BIKEID}", str(bikeid))
                     trailsClass = trailsClass.replace("{HOURS}", str(stepHours))
-                    trailsClass = trailsClass.replace("{MINTIMESTAMP}", str(stepMinTimestamp))
-                    trailsClass = trailsClass.replace("{MAXTIMESTAMP}", str(stepStartMaxTimestamp))
+                    trailsClass = trailsClass.replace("{MINTIMESTAMP}", str(int(stepMinTimestamp)))
+                    trailsClass = trailsClass.replace("{MAXTIMESTAMP}", str(int(stepStartMaxTimestamp)))
                     trailsClass = trailsClass.replace("{OPACITY}", str(stepOpacity))
                     trailsClass = trailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
                     bikeClasses.append(trailsClass)
@@ -342,6 +351,8 @@ if not os.path.isfile(sqlitePath):
     print "ERROR: Database %s doesn't exist." % (sqlitePath)
 
 else:
+    maxTimestampAllBikes = getMaxTimestampAllBikes()
+    
     while True:
         mapserverOK = None
         hourIncrementStart += 1
@@ -355,6 +366,10 @@ else:
                     replayMaxTimestamp = getMinTimestampAllBikes() + replayIncrement
             else:
                 replayMaxTimestamp += replayIncrement
+            
+            if replayMaxTimestamp > maxTimestampAllBikes:
+                print "Fin"
+                exit()
             # print "replayMaxTimestamp %d" % (replayMaxTimestamp)
 
         # Generate a new mapfile appropriate for the timestamps currently in the database
