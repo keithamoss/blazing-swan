@@ -4,12 +4,13 @@ from shutil import copyfile
 import os
 import random
 import time
+from datetime import datetime, timedelta
 import imghdr
 import sys
 
 # CONFIG START
-sleepTime = 1 # seconds - time to sleep after generating a map image
-snapshotInterval = 10 # minutes - how often snapshots are saved to ./snapshots
+sleepTime = 0 # seconds - time to sleep after generating a map image
+snapshotInterval = 0.2 # minutes - how often snapshots are saved to ./snapshots
 
 #
 # We have three different viz options
@@ -36,7 +37,7 @@ mapfilePath = "./bikes.map"
 mapfileTemplate = "./bikes-template.map"
 conn = db.connect(sqlitePath, timeout=3)
 cur = conn.cursor()
-snapshotCounter = None
+lastSnapshotTimestamp = None
 halfAnHour = 60 * 30
 churchFrameNum = 19
 churchFramePosition = 0
@@ -271,12 +272,6 @@ else:
         hourIncrementStart += 1
         # print "Hour %s (Days %s)" % (hourIncrementStart, hourIncrementStart / 24)
 
-        # Always take a snapshot the first time we run
-        if snapshotCounter == None:
-            snapshotCounter = snapshotInterval * 60
-        else:
-            snapshotCounter += 1
-
         # Generate a new mapfile appropriate for the timestamps currently in the database
         # Used to fade features out over time
         createMapfile()
@@ -316,17 +311,16 @@ else:
 
         # Only snapshot if everything is OK in MapServer-land
         if mapserverOK == True:
-            if (snapshotCounter * sleepTime) >= (snapshotInterval * 60):
+            # Always take a snapshot the first time
+            if lastSnapshotTimestamp == None or (datetime.utcnow() - lastSnapshotTimestamp) >  timedelta(minutes=snapshotInterval):
                 print "Snapshot taken!"
-                snapshotCounter = 0
+                lastSnapshotTimestamp = datetime.utcnow()
 
                 copyfile("./bikes.png", "./snapshots/map-%s.png" % (time.strftime("%Y-%m-%d-%H-%M-%S")))
 
                 if os.path.isfile("./snapshots/map-latest.png"):
                     os.remove("./snapshots/map-latest.png")
                 copyfile("./bikes.png", "./snapshots/map-latest.png")
-            # else:
-            #     print "Snapshot pending! (%s vs %s)" % ((snapshotCounter * sleepTime), (snapshotInterval * 60))
 
             print "Map generated OK %s" % (time.strftime("%Y-%m-%d-%H-%M-%S"))
         
