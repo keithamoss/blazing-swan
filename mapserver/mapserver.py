@@ -29,7 +29,12 @@ latestTrailsThresholdHours = 3 # Number of hours for trails to appear at 70% opa
 fadingTrailsSteps = 8 # Number of buckets to fade opacity through >= 3 hours old
 opacityStepMin = 10
 opacityStepMax = 60
+
+replayMode = True
+replayIncrement = 3 # seconds
+replayMinTimestamp = 544853504 # Default to 0. Use to limit the start time of replays until something interesting happens
 # CONFIG END
+
 
 # sqlitePath = "./data/bikes.sqlite"
 sqlitePath = "./data/bikes.sqlite"
@@ -42,6 +47,12 @@ halfAnHour = 60 * 30
 churchFrameNum = 19
 churchFramePosition = 0
 hourIncrementStart = 0
+replayMaxTimestamp = None
+
+def getMinTimestampAllBikes():
+    sql = "SELECT MIN(timestamp) FROM bikes"
+    cur.execute(sql)
+    return cur.fetchone()[0]
 
 # Get min and max timestamps per bike
 def getBikeTimestamps():
@@ -70,6 +81,9 @@ def getBikeTimestamps():
     
     timestampsPerBike = {}
     sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes GROUP BY bikeid"
+    if replayMode:
+        sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes WHERE timestamp <= %d GROUP BY bikeid" % (replayMaxTimestamp)
+        
     for row in cur.execute(sql):
         timestampsPerBike[row[0]] = {
             "min": row[1],
@@ -244,17 +258,21 @@ def createMapfile():
                     stepStartOpacity = stepOpacity
 
     template = getTemplateMapfile()
-    # print template
-    # print "\n\n".join(bikeClasses)
 
     with open(mapfilePath, "w") as f:
         content = template
         
-        # Only generate a new mapfile if we're using bikes.map
+        # Only the default bikes template with opacity fading needs {BIKE_CLASSES}
         if mapfileTemplate == "./bikes-template.map":
             content = content.replace("{BIKE_CLASSES}", "".join(bikeClasses))
 
+        dataQuery = "bikes"
+        if replayMode:
+            dataQuery = "SELECT * FROM bikes WHERE timestamp <= %d" % (replayMaxTimestamp)
+        content = content.replace("{DATA_QUERY}", dataQuery)
+
         content = content.replace("{CHURCH_FRAME_NUM}", str(churchFramePosition).zfill(5))
+
         churchFramePosition += 1
         if churchFramePosition > churchFrameNum:
             churchFramePosition = 0
@@ -271,6 +289,16 @@ else:
         mapserverOK = None
         hourIncrementStart += 1
         # print "Hour %s (Days %s)" % (hourIncrementStart, hourIncrementStart / 24)
+
+        if replayMode:
+            if replayMaxTimestamp == None:
+                if replayMinTimestamp > 0:
+                    replayMaxTimestamp = replayMinTimestamp + replayIncrement
+                else:
+                    replayMaxTimestamp = getMinTimestampAllBikes() + replayIncrement
+            else:
+                replayMaxTimestamp += replayIncrement
+            # print "replayMaxTimestamp %d" % (replayMaxTimestamp)
 
         # Generate a new mapfile appropriate for the timestamps currently in the database
         # Used to fade features out over time
