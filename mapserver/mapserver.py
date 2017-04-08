@@ -30,9 +30,11 @@ fadingTrailsSteps = 8 # Number of buckets to fade opacity through >= 3 hours old
 opacityStepMin = 10
 opacityStepMax = 60
 
-replayMode = True
-replayIncrement = 3 # seconds
+replayMode = False
+replayIncrement = 60 # seconds
 replayMinTimestamp = 544853504 # Default to 0. Use to limit the start time of replays until something interesting happens
+
+showCurrentBikePositions = False
 # CONFIG END
 
 
@@ -53,6 +55,18 @@ def getMinTimestampAllBikes():
     sql = "SELECT MIN(timestamp) FROM bikes"
     cur.execute(sql)
     return cur.fetchone()[0]
+
+def getCurrentBikePositions():
+    sql = "SELECT bikeid, ST_X(PointN(geom, 2)), ST_Y(PointN(geom, 2)) FROM bikes GROUP BY bikeid ORDER BY timestamp DESC"
+    if replayMode:
+        sql = "SELECT bikeid, ST_X(PointN(geom, 2)), ST_Y(PointN(geom, 2)) FROM bikes WHERE timestamp <= %f GROUP BY bikeid ORDER BY timestamp DESC" % (replayMaxTimestamp)
+    cur.execute(sql)
+
+    bikePositions = {}
+    for row in cur.fetchall():
+        # bikePositions[row[0]] = {"lon": row[1], "lat": row[2]}
+        bikePositions[row[0]] = "%f %f" % (row[1], row[2])
+    return bikePositions
 
 # Get min and max timestamps per bike
 def getBikeTimestamps():
@@ -118,20 +132,26 @@ def createMapfile():
             "colour": "204 204 204"
         },
 
-        # 20233: {
-        #     "colour": "251 176 59"
+        # Pastel Colours
+        # 1: {
+        #     # Yellow
+        #     "colour": "255 210 77"
         # },
-        # 17747: {
-        #     "colour": "34 59 83"
+        # 2: {
+        #     # Red
+        #     "colour": "147 56 74"
         # },
-        # 15731: {
-        #     "colour": "229 94 94"
+        # 3: {
+        #     # Dusky Blue
+        #     "colour": "45 98 108"
         # },
-        # 16941: {
-        #     "colour": "59 178 208"
+        # 4: {
+        #     # Purple
+        #     "colour": "74 47 72"
         # },
-        # 17526: {
-        #     "colour": "204 204 204"
+        # 5: {
+        #     # Pink
+        #     "colour": "227 172 208"
         # },
     }
 
@@ -171,13 +191,36 @@ def createMapfile():
         END
     """
 
+    bikeTrailsClassTemplateCurrentPosition = """
+        LAYER
+            NAME bike{BIKEID}currentposition
+            TYPE POINT
+            STATUS DEFAULT
+            FEATURE
+                POINTS
+                    {BIKE_CURRENT_COORDS}
+                END # End Points
+            END # End Feature
+            CLASS
+                NAME "Bike {BIKEID} Current Position"
+                STYLE
+                    SYMBOL "circle"
+                    SIZE 5
+                    COLOR {COLOUR_RGB}
+                    OPACITY {OPACITY}
+                END
+            END
+        END
+    """
+
     bikeClasses = []
 
     timestampsPerBike = getBikeTimestamps()
+    print timestampsPerBike
 
     for bikeid in timestampsPerBike:
-        # print
-        # print "## Bikeid %s" % (bikeid)
+        print
+        print "## Bikeid %s" % (bikeid)
 
         if noSteps:
             latestTrailsClass = bikeTrailsClassTemplateLatestNoTimestamp
@@ -190,12 +233,12 @@ def createMapfile():
             # Latest = 100% opacity and trails from the last n hours
             latestMinTimestamp = timestampsPerBike[bikeid]["max"] - (latestTrailsThresholdHours * 60 * 60) + 1
 
-            latestTrailsClass = bikeTrailsClassTemplateLatest
-            latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
-            latestTrailsClass = latestTrailsClass.replace("{MINTIMESTAMP}", str(latestMinTimestamp))
-            latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "70")
-            latestTrailsClass = latestTrailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
-            bikeClasses.append(latestTrailsClass)
+            # latestTrailsClass = bikeTrailsClassTemplateLatest
+            # latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
+            # latestTrailsClass = latestTrailsClass.replace("{MINTIMESTAMP}", str(latestMinTimestamp))
+            # latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "70")
+            # latestTrailsClass = latestTrailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
+            # bikeClasses.append(latestTrailsClass)
 
             if onlyTwoSteps:
                 # This works because MapServer matches the first class that it finds - so this catches everything older than latestTrailsClass
@@ -207,6 +250,7 @@ def createMapfile():
 
             else:
                 opacityStepMaxActual = opacityStepMax
+                latestMinTimestamp = timestampsPerBike[bikeid]["max"]
                 timestampDiff = latestMinTimestamp - timestampsPerBike[bikeid]["min"]
                 timestampIncrementSeconds = int(round(timestampDiff / fadingTrailsSteps))
 
@@ -215,6 +259,8 @@ def createMapfile():
 
                 stepsInHours = []
                 timestampDiffRemaining = timestampDiff
+                timestampDiffRemaining = float(timestampsPerBike[bikeid]["max"] - timestampsPerBike[bikeid]["min"])
+                print "timestampDiffRemaining %s (%s)" % (timestampDiffRemaining, timestampDiffRemaining / (60 * 60))
                 for step in reversed(range(1, fadingTrailsSteps + 1)):
                     haltStepping = False
                     # print "Step %s" % (step)
@@ -222,20 +268,26 @@ def createMapfile():
                     stepSize = timestampDiffRemaining / 2
                     timestampDiffRemaining -= stepSize
 
+                    print "stepSize %s (%s)" % (stepSize, stepSize / (60 * 60))
                     if stepSize < (60 * 60 * 3):
                         haltStepping = True
-                        stepSize = (60 * 60 * 3)
+                        # stepSize = (60 * 60 * 3)
+                        stepSize = timestampDiffRemaining
+                        print "Halt stepSize %s (%s)" % (stepSize, stepSize / (60 * 60))
                         
                     stepsInHours.append(stepSize / (60 * 60))
 
                     if haltStepping:
+                        # print "Halt %s (%s)" % (timestampDiffRemaining, float(timestampDiffRemaining) / (60 * 60))
+                        stepsInHours.append(float(timestampDiffRemaining) / (60 * 60))
                         break
                 stepsInHours = list(reversed(stepsInHours))
+                print stepsInHours
 
-
-                stepStartMaxTimestamp = latestMinTimestamp
+                stepStartMaxTimestamp = timestampsPerBike[bikeid]["max"]
                 stepStartOpacity = opacityStepMaxActual
                 timestampDiffRemaining = timestampDiff
+                timestampDiffRemaining = timestampsPerBike[bikeid]["max"]
                 for i, stepHours in enumerate(stepsInHours):
                     # print "Step %s (%shrs)" % (i, stepHours)
 
@@ -248,8 +300,8 @@ def createMapfile():
                     trailsClass = bikeTrailsClassTemplate
                     trailsClass = trailsClass.replace("{BIKEID}", str(bikeid))
                     trailsClass = trailsClass.replace("{HOURS}", str(stepHours))
-                    trailsClass = trailsClass.replace("{MINTIMESTAMP}", str(stepMinTimestamp))
-                    trailsClass = trailsClass.replace("{MAXTIMESTAMP}", str(stepStartMaxTimestamp))
+                    trailsClass = trailsClass.replace("{MINTIMESTAMP}", str(int(stepMinTimestamp)))
+                    trailsClass = trailsClass.replace("{MAXTIMESTAMP}", str(int(stepStartMaxTimestamp)))
                     trailsClass = trailsClass.replace("{OPACITY}", str(stepOpacity))
                     trailsClass = trailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
                     bikeClasses.append(trailsClass)
@@ -270,6 +322,21 @@ def createMapfile():
         if replayMode:
             dataQuery = "SELECT * FROM bikes WHERE timestamp <= %d" % (replayMaxTimestamp)
         content = content.replace("{DATA_QUERY}", dataQuery)
+
+        if showCurrentBikePositions:
+            bikePositions = getCurrentBikePositions()
+            bikeCurrentClasses = []
+            for bikeid in bikePositions:
+                latestTrailsClassCurPos = bikeTrailsClassTemplateCurrentPosition
+                latestTrailsClassCurPos = latestTrailsClassCurPos.replace("{BIKE_CURRENT_COORDS}", bikePositions[bikeid])
+                latestTrailsClassCurPos = latestTrailsClassCurPos.replace("{BIKEID}", str(bikeid))
+                latestTrailsClassCurPos = latestTrailsClassCurPos.replace("{OPACITY}", "70")
+                latestTrailsClassCurPos = latestTrailsClassCurPos.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
+                bikeCurrentClasses.append(latestTrailsClassCurPos)
+
+            content = content.replace("{CURRENT_BIKE_LOCATIONS}", "".join(bikeCurrentClasses))
+        else:
+            content = content.replace("{CURRENT_BIKE_LOCATIONS}", "")
 
         content = content.replace("{CHURCH_FRAME_NUM}", str(churchFramePosition).zfill(5))
 
@@ -355,6 +422,6 @@ else:
         sys.stdout.flush()
         time.sleep(sleepTime)
 
-        # exit()
+        exit()
     
     conn.close()
