@@ -1,5 +1,9 @@
 venv/
-/data/
+venv2/
+data/
 matplotlib-test/
 mapnik-test/
 mapserver/snapshots/
+mapserver/data/
+*.sqlite
+.vscode/*

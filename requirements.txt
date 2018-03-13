@@ -1,0 +1,2 @@
+pyspatialite==3.0.1-alpha-0
+wsgiref==0.1.2
