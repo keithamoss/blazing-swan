@@ -1,0 +1,56 @@
+MAP
+    CONFIG "MS_ERRORFILE" "./ms_error.txt"
+    DEBUG 5
+
+    NAME "sample"
+    STATUS ON
+    SIZE 1920 1080
+    # SYMBOLSET "../etc/symbols.txt"
+    # EXTENT -180 -90 180 90
+    # EXTENT 40.650038638196776 -74.29743368372984 40.85394227545683 -73.63825399623428
+    # EXTENT -74.12 40.69 -73.8 40.8
+    # EXTENT -31 114 -32 116
+    EXTENT 114 -32 116 -31
+    UNITS DD
+    SHAPEPATH "./data"
+    IMAGECOLOR 0 0 0
+    # FONTSET "../etc/fonts.txt"
+
+    #
+    # Start of web interface definition
+    #
+    WEB
+        IMAGEPATH "/ms4w/tmp/ms_tmp/"
+        IMAGEURL "/ms_tmp/"
+    END # WEB
+
+    SYMBOL
+        NAME "circle"
+        TYPE ellipse
+        FILLED true
+        POINTS
+            1 1
+        END
+    END
+
+    #
+    # Start of layer definitions
+    #
+    LAYER
+        NAME my_counties_layer
+        TYPE POINT
+        CONNECTIONTYPE OGR
+        CONNECTION "spatialite-from-scratch.sqlite"
+        DATA "test_pt2"
+        # DATA "select geometry from 50_points"
+        STATUS DEFAULT
+        CLASS
+            NAME "15731"
+            STYLE
+                SYMBOL "circle"
+                SIZE 15
+                COLOR 251 176 59
+            END
+        END
+    END
+END # MAP

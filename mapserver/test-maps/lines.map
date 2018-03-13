@@ -1,0 +1,203 @@
+MAP
+    CONFIG "MS_ERRORFILE" "./ms_error.txt"
+    DEBUG 5
+
+    NAME "sample"
+    STATUS ON
+    SIZE 1920 1080
+    # SYMBOLSET "../etc/symbols.txt"
+    # EXTENT -180 -90 180 90
+    # EXTENT 40.650038638196776 -74.29743368372984 40.85394227545683 -73.63825399623428
+    EXTENT -74.12 40.69 -73.8 40.8
+    UNITS DD
+    SHAPEPATH "./data"
+    IMAGECOLOR 0 0 0
+    # FONTSET "../etc/fonts.txt"
+
+    #
+    # Start of web interface definition
+    #
+    WEB
+        IMAGEPATH "/ms4w/tmp/ms_tmp/"
+        IMAGEURL "/ms_tmp/"
+    END # WEB
+
+    SYMBOL
+        NAME "circle"
+        TYPE ellipse
+        FILLED true
+        POINTS
+            1 1
+        END
+    END
+
+    #
+    # Start of layer definitions
+    #
+    LAYER
+        NAME my_counties_layer
+        TYPE LINE
+        CONNECTIONTYPE OGR
+        CONNECTION "29000-lines-ogr2ogr.sqlite"
+        DATA "ogrgeojson"
+        STATUS DEFAULT
+        CLASS
+            NAME "15731"
+            EXPRESSION ([bikeid] eq 15731 AND [timestamp] >= 1372658520 AND [timestamp] < 1425613741)
+            STYLE
+                WIDTH 3
+                COLOR 251 176 59
+                OPACITY 10
+            END
+        END
+
+        CLASS
+            NAME "15731"
+            EXPRESSION ([bikeid] eq 15731 AND [timestamp] >= 1425613741 AND [timestamp] < 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 251 176 59
+                OPACITY 25
+            END
+        END
+
+        CLASS
+            NAME "15731"
+            EXPRESSION ([bikeid] eq 15731 AND [timestamp] >= 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 251 176 59
+                OPACITY 100
+            END
+        END
+
+
+
+
+        CLASS
+            NAME "16941"
+            EXPRESSION ([bikeid] eq 16941 AND [timestamp] >= 1372658520 AND [timestamp] < 1425613741)
+            STYLE
+                WIDTH 3
+                COLOR 34 59 83
+                OPACITY 10
+            END
+        END
+
+        CLASS
+            NAME "16941"
+            EXPRESSION ([bikeid] eq 16941 AND [timestamp] >= 1425613741 AND [timestamp] < 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 34 59 83
+                OPACITY 25
+            END
+        END
+
+        CLASS
+            NAME "16941"
+            EXPRESSION ([bikeid] eq 16941 AND [timestamp] >= 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 34 59 83
+                OPACITY 100
+            END
+        END
+
+
+
+        CLASS
+            NAME "17526"
+            EXPRESSION ([bikeid] eq 17526 AND [timestamp] >= 1372658520 AND [timestamp] < 1425613741)
+            STYLE
+                WIDTH 3
+                COLOR 229 94 94
+                OPACITY 10
+            END
+        END
+
+        CLASS
+            NAME "17526"
+            EXPRESSION ([bikeid] eq 17526 AND [timestamp] >= 1425613741 AND [timestamp] < 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 229 94 94
+                OPACITY 25
+            END
+        END
+
+        CLASS
+            NAME "17526"
+            EXPRESSION ([bikeid] eq 17526 AND [timestamp] >= 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 229 94 94
+                OPACITY 100
+            END
+        END
+
+
+
+        CLASS
+            NAME "17747"
+            EXPRESSION ([bikeid] eq 17747 AND [timestamp] >= 1372658520 AND [timestamp] < 1425613741)
+            STYLE
+                WIDTH 3
+                COLOR 59 178 208
+                OPACITY 10
+            END
+        END
+
+        CLASS
+            NAME "17747"
+            EXPRESSION ([bikeid] eq 17747 AND [timestamp] >= 1425613741 AND [timestamp] < 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 59 178 208
+                OPACITY 25
+            END
+        END
+
+        CLASS
+            NAME "17747"
+            EXPRESSION ([bikeid] eq 17747 AND [timestamp] >= 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 59 178 208
+                OPACITY 100
+            END
+        END
+
+
+
+        CLASS
+            NAME "20233"
+            EXPRESSION ([bikeid] eq 20233 AND [timestamp] >= 1372658520 AND [timestamp] < 1425613741)
+            STYLE
+                WIDTH 3
+                COLOR 204 204 204
+                OPACITY 10
+            END
+        END
+
+        CLASS
+            NAME "20233"
+            EXPRESSION ([bikeid] eq 20233 AND [timestamp] >= 1425613741 AND [timestamp] < 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 204 204 204
+                OPACITY 25
+            END
+        END
+
+        CLASS
+            NAME "20233"
+            EXPRESSION ([bikeid] eq 20233 AND [timestamp] >= 1475202449)
+            STYLE
+                WIDTH 3
+                COLOR 204 204 204
+                OPACITY 100
+            END
+        END
+    END
+END # MAP

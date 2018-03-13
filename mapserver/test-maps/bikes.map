@@ -474,7 +474,7 @@ MAP
         CLASS
             NAME "Base Marker"
             STYLE
-                SYMBOL "./icons/church_sim_png/church_sim_00003.png"
+                SYMBOL "./icons/church_sim_png/church_sim_00004.png"
                 SIZE 120
             END
         END
