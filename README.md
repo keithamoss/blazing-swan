@@ -1,3 +1,13 @@
+# Running It
+
+`php -S localhost:8000`
+
+```
+. venv/bin/activate
+cd mapserver
+python mapserver.py
+```
+
 # Installation
 
 1.  Install PHP

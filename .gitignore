@@ -9,6 +9,7 @@ mapserver/data/
 .vscode/*
 /junk/
 /mapserver/junk/
+/mapserver/bikes.map
 /mapserver/bikes.png
 /mapserver/bikes.tmp.png
 /mapserver/log.txt
