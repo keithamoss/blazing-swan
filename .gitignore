@@ -7,3 +7,10 @@ mapserver/snapshots/
 mapserver/data/
 *.sqlite
 .vscode/*
+/junk/
+/mapserver/junk/
+/mapserver/bikes.png
+/mapserver/bikes.tmp.png
+/mapserver/log.txt
+/mapserver/ms_error.txt
+TODO.md
