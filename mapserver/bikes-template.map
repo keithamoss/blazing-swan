@@ -31,7 +31,17 @@ MAP
     WEB
         IMAGEPATH "/ms4w/tmp/ms_tmp/"
         IMAGEURL "/ms_tmp/"
+        METADATA
+            "wms_title"           "Blazing Swan WMS Server"
+            "wms_onlineresource"  "http://example.com/cgi-bin/mapserv?map=bikes.map&"
+            "wms_srs"             "EPSG:4326"
+            "wms_enable_request"  "*"
+        END
     END # WEB
+
+    PROJECTION
+        "init=epsg:4326"
+    END
 
     SYMBOL
         NAME "circle"
@@ -50,7 +60,7 @@ MAP
         TYPE LINE
         STATUS DEFAULT
         CONNECTIONTYPE OGR
-        CONNECTION "bikes.sqlite"
+        CONNECTION "{SQLITE_DB_PATH}"
         DATA "{DATA_QUERY}"
         # DATA "bikes"
         # DATA "select * from bikes"
@@ -76,6 +86,27 @@ MAP
             STYLE
                 SYMBOL "./icons/church_sim_png/church_sim_{CHURCH_FRAME_NUM}.png"
                 SIZE 120
+            END
+        END
+    END
+
+    LAYER
+        NAME camp1
+        TYPE POINT
+        STATUS DEFAULT
+        FEATURE
+            POINTS
+                {CAMP1_LON} {CAMP1_LAT}
+            END # End Points
+        END # End Feature
+        CLASS
+            NAME "Theme Camp 1"
+            STYLE
+                SYMBOL "./icons/camp1/campfire_{CAMP1_FRAME_NUM}.png"
+                SIZE 64
+                # SYMBOL "circle"
+                # COLOR 227 172 208
+                # OPACITY 60
             END
         END
     END

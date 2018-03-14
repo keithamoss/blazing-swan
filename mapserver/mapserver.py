@@ -8,40 +8,13 @@ from datetime import datetime, timedelta
 import imghdr
 import sys
 
-# CONFIG START
-sleepTime = 1 # seconds - time to sleep after generating a map image
-snapshotInterval = 10 # minutes - how often snapshots are saved to ./snapshots
-
-#
-# We have three different viz options
-# Set noSteps = True to have all trails at 70% opacity.
-
-# Set onlyTwoSteps = True and noSteps = False to have all trails from the last `latestTrailsThresholdHours` hours at 70% opacity, and all older trails at 50% opacity.
-
-# Set noSteps = False and onlyTwoSteps = False to have all trails from the last `latestTrailsThresholdHours` hours at 70% opacity, and then a gradual reduction in opacity for `fadingTrailsSteps` steps according to the range given by `opacityStepMin` and `opacityStepMax`.
-#
-noSteps = False
-onlyTwoSteps = False
-
-latestTrailsThresholdHours = 3 # Number of hours for trails to appear at 70% opacity
-
-# Trails older than `latestTrailsThresholdHours` hours will fade away according to the number of steps and opacity range given here
-fadingTrailsSteps = 8 # Number of buckets to fade opacity through >= 3 hours old
-opacityStepMin = 10
-opacityStepMax = 60
-
-replayMode = False
-replayIncrement = 60 # seconds
-replayMinTimestamp = 544853504 # Default to 0. Use to limit the start time of replays until something interesting happens
-
-showCurrentBikePositions = False
-# CONFIG END
-
+import config
 
 # sqlitePath = "./data/bikes.sqlite"
-sqlitePath = "./data/bikes.sqlite"
+sqlitePath = "./data/2017_actual/bikes.sqlite"
 mapfilePath = "./bikes.map"
 mapfileTemplate = "./bikes-template.map"
+
 conn = db.connect(sqlitePath, timeout=3)
 cur = conn.cursor()
 lastSnapshotTimestamp = None
@@ -50,6 +23,141 @@ churchFrameNum = 19
 churchFramePosition = 0
 hourIncrementStart = 0
 replayMaxTimestamp = None
+
+def initCamps():
+    global config
+    return config.camps
+
+def getCountOfBikesNearCamps(timestampsPerBike):
+    state = {}
+
+    for camp in camps:
+        bikeSQL = []
+        for bikeid in timestampsPerBike:
+            data = timestampsPerBike[bikeid]
+
+            sql = "(bikeid = %d AND timestamp >= %d AND PtDistWithin(SetSRID(PointFromText('%s'), 4326), SetSRID(PointFromText('POINT(%f %f)'), 4326), %d, 1))" % (bikeid, data["max"], data["point"], camp["lon"], camp["lat"], config.geofenceRadiusInMetres)
+            if config.replayMode:
+                sql = "(bikeid = %d AND timestamp >= %d AND timestamp <= %d AND PtDistWithin(SetSRID(PointFromText('%s'), 4326), SetSRID(PointFromText('POINT(%f %f)'), 4326), %d, 1))" % (bikeid, data["max"], replayMaxTimestamp, data["point"], camp["lon"], camp["lat"], config.geofenceRadiusInMetres)
+            bikeSQL.append(sql)
+            # print sql
+
+        for row in cur.execute("SELECT COUNT(*) FROM bikes WHERE " + " OR ".join(bikeSQL)):
+            state[camp["name"]] = row[0]
+
+    return state
+
+def animateCamps(camps, content, timestampsPerBike):
+    def setPoweredOffFrame():
+        camp["current_state"] = "POWERED_DOWN"
+        camp["current_frame"] = camp["states"]["powered_off"]["frame_start"]
+
+    def beginPowerUpAni():
+        camp["current_state"] = "POWERING_UP"
+        camp["current_frame"] = camp["states"]["powering_up"]["frame_start"]
+    
+    def tickPowerUpAni():
+        camp["current_state"] = "POWERING_UP"
+        camp["current_frame"] += 1
+
+        if camp["current_frame"] > camp["states"]["powering_up"]["frame_end"]:
+            camp["current_state"] = "POWERED_ON"
+    
+    def reversePowerUpAni():
+        camp["current_state"] = "POWERING_UP"
+        camp["current_frame"] -= 1
+
+        if camp["current_frame"] <= camp["states"]["powering_up"]["frame_start"]:
+            camp["current_state"] = "POWERED_DOWN"
+    
+    def loopPoweredOnAni():
+        camp["current_state"] = "POWERED_ON"
+        camp["current_frame"] += 1
+
+        if camp["current_frame"] > camp["states"]["powered_on"]["frame_end"]:
+            camp["current_frame"] = camp["states"]["powered_on"]["frame_start"]
+
+    def beginPowerDownAni():
+        camp["current_state"] = "POWERING_DOWN"
+        camp["current_frame"] = camp["states"]["powering_down"]["frame_start"]
+    
+    def beginPowerDownAniASAP():
+        halfwayPoint = camp["states"]["powered_on"]["frame_start"] + ((camp["states"]["powered_on"]["frame_end"] - camp["states"]["powered_on"]["frame_start"]) / 2)
+
+        if camp["current_frame"] <= halfwayPoint:
+            camp["current_frame"] -= 1
+
+            if camp["current_frame"] < camp["states"]["powered_on"]["frame_start"]:
+                beginPowerDownAni()
+
+        else:
+            camp["current_frame"] += 1
+
+            if camp["current_frame"] > camp["states"]["powered_on"]["frame_end"]:
+                beginPowerDownAni()
+    
+    # def beginPowerDownAniWhenNextLoopFinishes():
+    #     camp["current_frame"] += 1
+    
+    #     if camp["current_frame"] > camp["states"]["powered_on"]["frame_end"]:
+    #         beginPowerDownAni()
+    
+    def tickPowerDownAni():
+        camp["current_state"] = "POWERING_DOWN"
+        camp["current_frame"] += 1
+
+        if camp["current_frame"] >= camp["states"]["powering_down"]["frame_end"]:
+            camp["current_state"] = "POWERED_DOWN"
+    
+    def reversePowerDownAni():
+        camp["current_state"] = "POWERING_DOWN"
+        camp["current_frame"] -= 1
+
+        if camp["current_frame"] <= camp["states"]["powering_down"]["frame_start"]:
+            camp["current_state"] = "POWERED_ON"
+            camp["current_frame"] = camp["states"]["powered_on"]["frame_start"]
+
+
+    bikeCount = getCountOfBikesNearCamps(timestampsPerBike)
+    # print bikeCount
+
+    for camp in camps:
+        # Set the position of the camp (during dev only?)
+        campLatPlaceholderString = "{%s_LAT}" % camp["name"].upper()
+        campLonPlaceholderString = "{%s_LON}" % camp["name"].upper()
+        content = content.replace(campLatPlaceholderString, str(camp["lat"]))
+        content = content.replace(campLonPlaceholderString, str(camp["lon"]))
+
+        if bikeCount[camp["name"]] > 0:
+            if camp["current_state"] == "POWERED_DOWN":
+                beginPowerUpAni()
+            elif camp["current_state"] == "POWERING_UP":
+                tickPowerUpAni()
+            elif camp["current_state"] == "POWERED_ON":
+                loopPoweredOnAni()
+            elif camp["current_state"] == "POWERING_DOWN":
+                # Keep the animations graceful by reversing the powering down ani
+                # if bikes rejoin the camp while we're still powering down
+                reversePowerDownAni()
+        else:
+            if camp["current_state"] == "POWERING_UP":
+                # Keep the animations graceful by reversing the powering up ani
+                # if bikes leave the camp while we're still powering up
+                reversePowerUpAni()
+            elif camp["current_state"] == "POWERED_ON":
+                beginPowerDownAniASAP()
+            elif camp["current_state"] == "POWERING_DOWN":
+                tickPowerDownAni()
+            elif camp["current_state"] == "POWERED_DOWN":
+                setPoweredOffFrame()
+
+        campFramePlaceholderString = "{%s_FRAME_NUM}" % camp["name"].upper()
+        content = content.replace(campFramePlaceholderString, str(camp["current_frame"]).zfill(5))
+
+        print "%s (Bikes = %s; Frame = %s; State = %s)" % (camp["name"], bikeCount[camp["name"]], camp["current_frame"], camp["current_state"])
+    # exit()
+
+    return content
 
 def getMinTimestampAllBikes():
     sql = "SELECT MIN(timestamp) FROM bikes"
@@ -63,7 +171,7 @@ def getMaxTimestampAllBikes():
 
 def getCurrentBikePositions():
     sql = "SELECT bikeid, ST_X(PointN(geom, 2)), ST_Y(PointN(geom, 2)) FROM bikes GROUP BY bikeid ORDER BY timestamp DESC"
-    if replayMode:
+    if config.replayMode:
         sql = "SELECT bikeid, ST_X(PointN(geom, 2)), ST_Y(PointN(geom, 2)) FROM bikes WHERE timestamp <= %f GROUP BY bikeid ORDER BY timestamp DESC" % (replayMaxTimestamp)
     cur.execute(sql)
 
@@ -84,7 +192,7 @@ def getBikeTimestamps():
     #     timestampsPerBikeFoo[row[0]] = {
     #         "min": row[1],
     #         "max": row[2],
-    #         "minThreshold": row[2] - (latestTrailsThresholdHours * 60 * 60) - (60 * 60 * hourIncrementStart)
+    #         "minThreshold": row[2] - (config.latestTrailsThresholdHours * 60 * 60) - (60 * 60 * hourIncrementStart)
     #     }
     
     # for bikeid in timestampsPerBikeFoo:
@@ -99,20 +207,21 @@ def getBikeTimestamps():
     #     }
     
     timestampsPerBike = {}
-    sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes GROUP BY bikeid"
-    if replayMode:
-        sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes WHERE timestamp <= %d GROUP BY bikeid" % (replayMaxTimestamp)
+    sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp), ST_AsText(EndPoint(geom)) FROM bikes GROUP BY bikeid"
+    if config.replayMode:
+        sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp), ST_AsText(EndPoint(geom)) FROM bikes WHERE timestamp <= %d GROUP BY bikeid" % (replayMaxTimestamp)
         
     for row in cur.execute(sql):
         timestampsPerBike[row[0]] = {
             "min": row[1],
             "max": row[2],
+            "point": row[3],
         }
     return timestampsPerBike
 
 # Create a mapfile with the correct styling rules for the current point in time
 def createMapfile():
-    global mapfilePath, mapfileTemplate, fadingTrailsSteps, churchFramePosition
+    global mapfilePath, mapfileTemplate, config, churchFramePosition
 
     def getTemplateMapfile():
         with open(mapfileTemplate, "r") as f:
@@ -122,18 +231,23 @@ def createMapfile():
     # RGB
     bikeStyles = {
         1: {
+            # Orange
             "colour": "251 176 59"
         },
         2: {
+            # Dusky Blue
             "colour": "34 59 83"
         },
         3: {
+            # Salmon Pink
             "colour": "229 94 94"
         },
         4: {
+            # Light Blue
             "colour": "59 178 208"
         },
         5: {
+            # Grey
             "colour": "204 204 204"
         },
 
@@ -227,7 +341,7 @@ def createMapfile():
         # print
         # print "## Bikeid %s" % (bikeid)
 
-        if noSteps:
+        if config.noSteps:
             latestTrailsClass = bikeTrailsClassTemplateLatestNoTimestamp
             latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
             latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "70")
@@ -236,17 +350,17 @@ def createMapfile():
 
         else:
             # Latest = 100% opacity and trails from the last n hours
-            latestMinTimestamp = timestampsPerBike[bikeid]["max"] - (latestTrailsThresholdHours * 60 * 60) + 1
+            latestMinTimestamp = timestampsPerBike[bikeid]["max"] - (config.latestTrailsThresholdHours * 60 * 60) + 1
 
             latestTrailsClass = bikeTrailsClassTemplateLatest
             latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
-            latestTrailsClass = latestTrailsClass.replace("{HOURS}", str(latestTrailsThresholdHours))
+            latestTrailsClass = latestTrailsClass.replace("{HOURS}", str(config.latestTrailsThresholdHours))
             latestTrailsClass = latestTrailsClass.replace("{MINTIMESTAMP}", str(latestMinTimestamp))
             latestTrailsClass = latestTrailsClass.replace("{OPACITY}", "70")
             latestTrailsClass = latestTrailsClass.replace("{COLOUR_RGB}", bikeStyles[bikeid]["colour"])
             bikeClasses.append(latestTrailsClass)
 
-            if onlyTwoSteps:
+            if config.onlyTwoSteps:
                 # This works because MapServer matches the first class that it finds - so this catches everything older than latestTrailsClass
                 latestTrailsClass = bikeTrailsClassTemplateLatestNoTimestamp
                 latestTrailsClass = latestTrailsClass.replace("{BIKEID}", str(bikeid))
@@ -255,16 +369,16 @@ def createMapfile():
                 bikeClasses.append(latestTrailsClass)
 
             else:
-                opacityStepMaxActual = opacityStepMax
+                opacityStepMaxActual = config.opacityStepMax
                 timestampDiff = latestMinTimestamp - timestampsPerBike[bikeid]["min"]
-                timestampIncrementSeconds = int(round(timestampDiff / fadingTrailsSteps))
+                timestampIncrementSeconds = int(round(timestampDiff / config.fadingTrailsSteps))
 
                 # Opacity step size
-                opacityIncrement = (opacityStepMaxActual - opacityStepMin) / fadingTrailsSteps
+                opacityIncrement = (opacityStepMaxActual - config.opacityStepMin) / config.fadingTrailsSteps
 
                 stepsInHours = []
                 timestampDiffRemaining = timestampDiff
-                for step in reversed(range(1, fadingTrailsSteps + 1)):
+                for step in reversed(range(1, config.fadingTrailsSteps + 1)):
                     haltStepping = False
                     # print "Step %s" % (step)
 
@@ -312,17 +426,19 @@ def createMapfile():
 
     with open(mapfilePath, "w") as f:
         content = template
+
+        content = content.replace("{SQLITE_DB_PATH}", sqlitePath.replace("./data/", ""))
         
         # Only the default bikes template with opacity fading needs {BIKE_CLASSES}
         if mapfileTemplate == "./bikes-template.map":
             content = content.replace("{BIKE_CLASSES}", "".join(bikeClasses))
 
         dataQuery = "bikes"
-        if replayMode:
+        if config.replayMode:
             dataQuery = "SELECT * FROM bikes WHERE timestamp <= %d" % (replayMaxTimestamp)
         content = content.replace("{DATA_QUERY}", dataQuery)
 
-        if showCurrentBikePositions:
+        if config.showCurrentBikePositions:
             bikePositions = getCurrentBikePositions()
             bikeCurrentClasses = []
             for bikeid in bikePositions:
@@ -337,11 +453,15 @@ def createMapfile():
         else:
             content = content.replace("{CURRENT_BIKE_LOCATIONS}", "")
 
-        content = content.replace("{CHURCH_FRAME_NUM}", str(churchFramePosition).zfill(5))
 
+        # Church of Belligerence
+        content = content.replace("{CHURCH_FRAME_NUM}", str(churchFramePosition).zfill(5))
         churchFramePosition += 1
         if churchFramePosition > churchFrameNum:
             churchFramePosition = 0
+        
+        # Animate theme camps if bikes are close by
+        content = animateCamps(camps, content, timestampsPerBike)
 
         f.write(content)
 
@@ -352,20 +472,27 @@ if not os.path.isfile(sqlitePath):
 
 else:
     maxTimestampAllBikes = getMaxTimestampAllBikes()
+
+    # Some debug
+    # for row in cur.execute("SELECT *, ST_AsText(geom) FROM bikes GROUP BY bikeid ORDER BY timestamp DESC"):
+    #     print(row)
+    # exit()
+    
+    camps = initCamps()
     
     while True:
         mapserverOK = None
         hourIncrementStart += 1
         # print "Hour %s (Days %s)" % (hourIncrementStart, hourIncrementStart / 24)
 
-        if replayMode:
+        if config.replayMode:
             if replayMaxTimestamp == None:
-                if replayMinTimestamp > 0:
-                    replayMaxTimestamp = replayMinTimestamp + replayIncrement
+                if config.replayMinTimestamp > 0:
+                    replayMaxTimestamp = config.replayMinTimestamp + config.replayIncrement
                 else:
-                    replayMaxTimestamp = getMinTimestampAllBikes() + replayIncrement
+                    replayMaxTimestamp = getMinTimestampAllBikes() + config.replayIncrement
             else:
-                replayMaxTimestamp += replayIncrement
+                replayMaxTimestamp += config.replayIncrement
             
             if replayMaxTimestamp > maxTimestampAllBikes:
                 print "Fin"
@@ -412,7 +539,7 @@ else:
         # Only snapshot if everything is OK in MapServer-land
         if mapserverOK == True:
             # Always take a snapshot the first time
-            if lastSnapshotTimestamp == None or (datetime.utcnow() - lastSnapshotTimestamp) >  timedelta(minutes=snapshotInterval):
+            if lastSnapshotTimestamp == None or (datetime.utcnow() - lastSnapshotTimestamp) >  timedelta(minutes=config.snapshotInterval):
                 print "Snapshot taken!"
                 lastSnapshotTimestamp = datetime.utcnow()
 
@@ -422,10 +549,10 @@ else:
                     os.remove("./snapshots/map-latest.png")
                 copyfile("./bikes.png", "./snapshots/map-latest.png")
 
-            print "Map generated OK %s" % (time.strftime("%Y-%m-%d-%H-%M-%S"))
+            # print "Map generated OK %s" % (time.strftime("%Y-%m-%d-%H-%M-%S"))
         
         sys.stdout.flush()
-        time.sleep(sleepTime)
+        time.sleep(config.sleepTime)
 
         # exit()
     

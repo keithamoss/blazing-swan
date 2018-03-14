@@ -8,6 +8,10 @@ cd mapserver
 python mapserver.py
 ```
 
+## Extracting PNG frames from animated GIFs
+
+`convert -coalesce pin-eye2.gif pin_eye_%05d.png`
+
 # Installation
 
 1.  Install PHP
