@@ -1,37 +1,16 @@
 <?php
-$icons = [[
-  "icon_name" => "pin_eye",
-  "base_url" => "pin_eye_png/pin_eye_",
-  "frame_start" => 0,
-  "frame_end" => 57,
-  "boundaries" => [
-    [
-      "name" => "powering_up",
-      "frame_start" => 0,
-      "frame_end" => 15,
-    ],
-    [
-      "name" => "powered_up",
-      "frame_start" => 16,
-      "frame_end" => 40,
-    ],
-    [
-      "name" => "powering_down",
-      "frame_start" => 41,
-      "frame_end" => 57,
-    ]
-  ],
-]];
+require_once "../../config.php";
+
 $json = [];
 
-foreach($icons as $icon) {
+foreach($camps as $icon) {
   $json[$icon["icon_name"]] = [
     "icon_name" => $icon["icon_name"],
-    "boundaries" => $icon["boundaries"],
+    "states" => $icon["states"],
     "frames" => new stdClass(),
   ];
 
-  for($frame = $icon["frame_start"]; $frame <= $icon["frame_end"]; $frame++) {
+  for($frame = $icon["states"]["powered_off"]["frame_start"]; $frame <= $icon["states"]["powering_down"]["frame_end"]; $frame++) {
     $frame_number = str_pad($frame, 5, "0", STR_PAD_LEFT);
     $frame_url = $icon["base_url"] . $frame_number . ".png";
   
@@ -57,12 +36,12 @@ if(isset($_GET["html"])) {
 EOT;
 
   foreach($json as $icon) {
-    echo <<<EOT
-        .{$icon["icon_name"]} {
-          display: none;
-        }
+//     echo <<<EOT
+//         .{$icon["icon_name"]} {
+//           display: none;
+//         }
 
-EOT;
+// EOT;
 
     foreach($icon["frames"] as $frame_num => $datauri) {
       echo <<<EOT
@@ -77,6 +56,6 @@ EOT;
 } else {
   header("Content-type: application/json");
   echo json_encode($json);
-  // echo "var icons = " . json_encode($json) . ";";
+  // echo "var camps = " . json_encode($json) . ";";
 }
 ?>
