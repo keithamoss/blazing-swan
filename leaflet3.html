@@ -67,11 +67,11 @@
 
     for (let camp of camps) {
       // console.log(camp);
-      campIconFrames[camp["icon_name"]] = 0
+      campIconFrames[camp["name"]] = 0
 
-      var icon = new L.DivIcon({ className: camp["icon_name"], iconSize: [camp["icon_width"], camp["icon_height"]], iconAnchor: [camp["icon_width"] / 2, camp["icon_height"] / 2] });
+      var icon = new L.DivIcon({ className: camp["name"], iconSize: [camp["icon_width"], camp["icon_height"]], iconAnchor: [camp["icon_width"] / 2, camp["icon_height"] / 2] });
       L.marker([camp["lat"], camp["lon"]], { icon: icon }).addTo(map);
-      $("." + camp["icon_name"]).html('<img src="" width="' + camp["icon_width"] + '" height="' + camp["icon_height"] + '" class="' + camp["icon_name"] + '_0" />')
+      $("." + camp["name"]).html('<img src="" width="' + camp["icon_width"] + '" height="' + camp["icon_height"] + '" class="' + camp["name"] + '_0" />')
     }
 
     window.setInterval(function () {
@@ -79,7 +79,7 @@
         for (let camp of camps) {
           var oldCamp = JSON.parse(JSON.stringify(camp))
 
-          if (campBikeCounts[camp["icon_name"]] > 0) {
+          if (campBikeCounts[camp["name"]] > 0) {
             if (camp["current_state"] == "POWERED_DOWN") {
               beginPowerUpAni(camp)
             } else if (camp["current_state"] == "POWERING_UP") {
@@ -106,10 +106,10 @@
           }
 
           if (camp !== oldCamp) {
-            // console.log(`${camp["icon_name"]} (Bikes = ${campBikeCounts[camp["icon_name"]]}; Frame = ${camp["current_frame"]}; State = ${camp["current_state"]};`)
+            // console.log(`${camp["name"]} (Bikes = ${campBikeCounts[camp["name"]]}; Frame = ${camp["current_frame"]}; State = ${camp["current_state"]};`)
           }
 
-          $("." + camp["icon_name"] + " > img").attr("class", camp["icon_name"] + "_" + camp["current_frame"]);
+          $("." + camp["name"] + " > img").attr("class", camp["name"] + "_" + camp["current_frame"]);
         }
 
       }

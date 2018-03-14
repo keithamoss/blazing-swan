@@ -15,5 +15,6 @@ mapserver/data/
 /mapserver/bikes.tmp.png
 /mapserver/log.txt
 /mapserver/ms_error.txt
+/mapserver/camps.json
 TODO.md
 bike-counts.json

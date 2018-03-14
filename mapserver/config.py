@@ -55,6 +55,9 @@ replayMinTimestamp = 545307309
 camps = [
     {
         "name": "camp1",
+        "base_url": "camp1/campfire_",
+        "icon_width": 64,
+        "icon_height": 64,
         # Test Case 1
         # "lon": 118.329704,
         # "lat": -32.660247,

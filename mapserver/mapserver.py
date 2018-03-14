@@ -15,6 +15,7 @@ import config
 sqlitePath = "./data/2017_actual/bikes.sqlite"
 mapfilePath = "./bikes.map"
 mapfileTemplate = "./bikes-template.map"
+campsJSON = "./camps.json"
 bikeCountJSON = "./bike-counts.json"
 
 conn = db.connect(sqlitePath, timeout=3)
@@ -495,6 +496,10 @@ else:
     # exit()
     
     camps = initCamps()
+    
+    if config.showAnimatedCamps == False:
+        with open(campsJSON, "w") as f:
+            json.dump(camps, f)
     
     while True:
         mapserverOK = None
