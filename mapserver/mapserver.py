@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta
 import imghdr
 import sys
+import json
 
 import config
 
@@ -14,6 +15,7 @@ import config
 sqlitePath = "./data/2017_actual/bikes.sqlite"
 mapfilePath = "./bikes.map"
 mapfileTemplate = "./bikes-template.map"
+bikeCountJSON = "./bike-counts.json"
 
 conn = db.connect(sqlitePath, timeout=3)
 cur = conn.cursor()
@@ -120,6 +122,11 @@ def animateCamps(camps, content, timestampsPerBike):
 
     bikeCount = getCountOfBikesNearCamps(timestampsPerBike)
     # print bikeCount
+
+    # Only needed if the frontend is handling the animation logic
+    if config.showAnimatedCamps == False:
+        with open(bikeCountJSON, "w") as f:
+            json.dump(bikeCount, f)
 
     for camp in camps:
         # Set the position of the camp (during dev only?)
