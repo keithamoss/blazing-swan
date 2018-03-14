@@ -123,39 +123,48 @@ def animateCamps(camps, content, timestampsPerBike):
 
     for camp in camps:
         # Set the position of the camp (during dev only?)
+        campStatusPlaceholderString = "{%s_STATUS}" % camp["name"].upper()
         campLatPlaceholderString = "{%s_LAT}" % camp["name"].upper()
         campLonPlaceholderString = "{%s_LON}" % camp["name"].upper()
         content = content.replace(campLatPlaceholderString, str(camp["lat"]))
         content = content.replace(campLonPlaceholderString, str(camp["lon"]))
 
-        if bikeCount[camp["name"]] > 0:
-            if camp["current_state"] == "POWERED_DOWN":
-                beginPowerUpAni()
-            elif camp["current_state"] == "POWERING_UP":
-                tickPowerUpAni()
-            elif camp["current_state"] == "POWERED_ON":
-                loopPoweredOnAni()
-            elif camp["current_state"] == "POWERING_DOWN":
-                # Keep the animations graceful by reversing the powering down ani
-                # if bikes rejoin the camp while we're still powering down
-                reversePowerDownAni()
+        
+        if config.showAnimatedCamps == False:
+            content = content.replace(campStatusPlaceholderString, "OFF")
+
+            campFramePlaceholderString = "{%s_FRAME_NUM}" % camp["name"].upper()
+            content = content.replace(campFramePlaceholderString, "00000")
+
         else:
-            if camp["current_state"] == "POWERING_UP":
-                # Keep the animations graceful by reversing the powering up ani
-                # if bikes leave the camp while we're still powering up
-                reversePowerUpAni()
-            elif camp["current_state"] == "POWERED_ON":
-                beginPowerDownAniASAP()
-            elif camp["current_state"] == "POWERING_DOWN":
-                tickPowerDownAni()
-            elif camp["current_state"] == "POWERED_DOWN":
-                setPoweredOffFrame()
+            content = content.replace(campStatusPlaceholderString, "DEFAULT")
+            if bikeCount[camp["name"]] > 0:
+                if camp["current_state"] == "POWERED_DOWN":
+                    beginPowerUpAni()
+                elif camp["current_state"] == "POWERING_UP":
+                    tickPowerUpAni()
+                elif camp["current_state"] == "POWERED_ON":
+                    loopPoweredOnAni()
+                elif camp["current_state"] == "POWERING_DOWN":
+                    # Keep the animations graceful by reversing the powering down ani
+                    # if bikes rejoin the camp while we're still powering down
+                    reversePowerDownAni()
+            else:
+                if camp["current_state"] == "POWERING_UP":
+                    # Keep the animations graceful by reversing the powering up ani
+                    # if bikes leave the camp while we're still powering up
+                    reversePowerUpAni()
+                elif camp["current_state"] == "POWERED_ON":
+                    beginPowerDownAniASAP()
+                elif camp["current_state"] == "POWERING_DOWN":
+                    tickPowerDownAni()
+                elif camp["current_state"] == "POWERED_DOWN":
+                    setPoweredOffFrame()
 
-        campFramePlaceholderString = "{%s_FRAME_NUM}" % camp["name"].upper()
-        content = content.replace(campFramePlaceholderString, str(camp["current_frame"]).zfill(5))
+            campFramePlaceholderString = "{%s_FRAME_NUM}" % camp["name"].upper()
+            content = content.replace(campFramePlaceholderString, str(camp["current_frame"]).zfill(5))
 
-        print "%s (Bikes = %s; Frame = %s; State = %s)" % (camp["name"], bikeCount[camp["name"]], camp["current_frame"], camp["current_state"])
-    # exit()
+            print "%s (Bikes = %s; Frame = %s; State = %s)" % (camp["name"], bikeCount[camp["name"]], camp["current_frame"], camp["current_state"])
 
     return content
 

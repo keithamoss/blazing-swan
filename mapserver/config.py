@@ -24,6 +24,7 @@ opacityStepMax = 60
 
 
 ## Config for camp animation
+showAnimatedCamps = False
 geofenceRadiusInMetres = 50
 
 
