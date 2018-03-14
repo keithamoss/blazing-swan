@@ -1,0 +1,158 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Blazing Swan</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="leaflet.css" />
+    <script src="leaflet.js"></script>
+    <script src="leaflet.wms.js"></script>
+
+    <!-- This is overkill! -->
+    <script src="jquery-1.12.0.min.js"></script>
+
+    <script src="scripts.js"></script>
+    <!-- <script src="mapserver/icons/icon2json-css-or-html.php"></script> -->
+    <link rel="stylesheet" href="mapserver/icons/icon2json-css-or-html.php?css" />
+
+    <style type="text/css">
+        body {
+            background-color: #000000;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        #map {
+            width: 100%;
+            height: 100%;
+            background-color: #ff0000;
+        }
+    </style>
+</head>
+
+<body onclick="requestFullScreen(document.body)">
+    <div id='map'></div>
+
+    <script type="text/javascript">
+        // 118.325 -32.6645 118.336 -32.654
+        var map = L.map('map', { zoomControl: false, attributionControl: false, crs: L.CRS.EPSG4326 }).setView([-32.6592, 118.3305], 16);
+
+        // disable drag and zoom handlers
+        map.dragging.disable();
+        map.touchZoom.disable();
+        map.doubleClickZoom.disable();
+        map.scrollWheelZoom.disable();
+
+        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // }).addTo(map);s
+
+        /*var imageUrl = 'mapserver/bikes.png',
+          imageBounds = [[-32.6645, 118.325], [-32.654, 118.336]];
+        L.imageOverlay(imageUrl, imageBounds).addTo(map);*/
+
+        /*L.tileLayer.wms("http://localhost:8001/mapserver/wms.php", {
+          layers: 'bikes,church,camp1',
+          format: 'image/png',
+        }).addTo(map);*/
+
+        var wms = L.WMS.overlay("http://localhost:8001/mapserver/wms.php?foo=" + Math.random(), {
+            layers: 'bikes,church,camp1',
+            format: 'image/png',
+        }).addTo(map);
+
+        window.setInterval(function () {
+            wms.setParams({ url: "http://localhost:8001/mapserver/wms.php?foo=" + Math.random() })
+        }, 500)
+
+        /*var LeafIcon = L.Icon.extend({
+            options: {
+                shadowUrl: 'leaf-shadow.png',
+                iconSize: [38, 95],
+                shadowSize: [50, 64],
+                iconAnchor: [22, 94],
+                shadowAnchor: [4, 62],
+                popupAnchor: [-3, -76]
+            }
+        });*/
+
+        // var greenIcon = new L.Icon({ iconUrl: 'mapserver/icons/pin_eye_png/pin-eye2.gif', iconSize: [66, 50], iconAnchor: [33, 25] });
+        var greenIcon = new L.DivIcon({ className: "greenIcon", iconSize: [66, 50], iconAnchor: [33, 25] });
+
+        L.marker([-32.6597, 118.3305], { icon: greenIcon }).addTo(map);
+        $(".greenIcon").html('<img src="" width="66" height="50" class="pin_eye_0" />')
+        // L.marker([51.495, -0.083], { icon: redIcon }).bindPopup("I am a red leaf.").addTo(map);
+        // L.marker([51.49, -0.1], { icon: orangeIcon }).bindPopup("I am an orange leaf.").addTo(map);
+
+        // https://davidwalsh.name/convert-image-data-uri-javascript
+        iconFrameNum = 1
+        let padToFive = number => number <= 99999 ? ("0000" + number).slice(-5) : number;
+        window.setInterval(function () {
+            if (iconFrameNum > 57) {
+                iconFrameNum = 0
+            }
+
+            /*getDataUri("mapserver/icons/pin_eye_png/pin_eye_" + padToFive(iconFrameNum) + ".png", function (data) {
+                $(".greenIcon").html('<img width="66" height="50" />').find("img").attr("src", data);
+            })*/
+
+            // $(".greenIcon").html('<img width="66" height="50" src="mapserver/icons/pin_eye_png/pin_eye_' + padToFive(iconFrameNum) + '.png" />');
+
+            // $(".greenIcon").html('<img width="66" height="50" src="' + icons["pin_eye"]["frames"][iconFrameNum] + '" />');
+
+            // $(".greenIcon > img[data-displayed=true]").attr("data-displayed", false).css("display", "none");
+            // $(".greenIcon > img.pin_eye_" + iconFrameNum).attr("data-displayed", true).css("display", "block");
+
+            // console.log(iconFrameNum)
+            $(".greenIcon > img").attr("class", "pin_eye_" + iconFrameNum);
+
+            iconFrameNum++
+        }, 32)
+
+        /*$.ajax({
+            url: "mapserver/icons/pin_eye_png/pin_eye_00000.png",
+            success: function (data, textStatus) {
+                // $("#map").attr("src", "data:image/png;base64," + data);
+                console.log(data)
+                $(".greenIcon").html('<img width="66" height="50" />').find("img").attr("src", data);
+            }
+        });*/
+
+        /*$.ajax({
+            url: "mapserver/icons/icon2json-css-or-html.php",
+            success: function (data, textStatus) {
+                for (let iconName of Object.keys(data)) {
+                    console.log(data[iconName]);
+                    for (let frameNum of Object.keys(data[iconName]["frames"])) {
+                        $(".greenIcon").append('<img src="' + data[iconName]["frames"][frameNum] + '" class="' + iconName + '_' + frameNum + '" width="66" height="50" style="display: none" />');
+                    }
+                }
+            }
+        });*/
+
+
+
+
+
+        // Refresh via Ajax to prevent the image loading flash
+        /*var intervalId = window.setInterval(function () {
+            $.ajax({
+                url: "mapserver/bikes.php",
+                data: {
+                    "foo": Math.random()
+                },
+                success: function (data, textStatus) {
+                    $("#map2").attr("src", "data:image/png;base64," + data);
+                }
+            });
+        }, 1000);*/
+    </script>
+</body>
+
+</html>
