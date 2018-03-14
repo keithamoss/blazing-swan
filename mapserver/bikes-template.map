@@ -93,7 +93,7 @@ MAP
     LAYER
         NAME camp1
         TYPE POINT
-        STATUS DEFAULT
+        STATUS {CAMP1_STATUS}
         FEATURE
             POINTS
                 {CAMP1_LON} {CAMP1_LAT}
