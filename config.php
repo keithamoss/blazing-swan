@@ -8,11 +8,11 @@ $camps = [[
   # "lon" => 118.329704,
   # "lat" => -32.660247,
   # Test Case 2
-  # "lon" => 118.332082,
-  # "lat" => -32.657582,
+  "lon" => 118.332082,
+  "lat" => -32.657582,
   # Test Case 3
-  "lon" => 118.330937,
-  "lat" => -32.657042,
+  # "lon" => 118.330937,
+  # "lat" => -32.657042,
   "current_frame" => 0,
   "current_state" => "POWERED_DOWN",
   "states" => [

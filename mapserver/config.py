@@ -42,13 +42,13 @@ replayMinTimestamp = 545305309 # Default to 0. Use to limit the start time of re
 
 # Test Case 2: Power up, be powered on, then power off
 # Bike 1 with Camp 1 at 118.332082 -32.657582
-# replayIncrement = 5
-# replayMinTimestamp = 545307309
+replayIncrement = 5
+replayMinTimestamp = 545307309
 
 # Test Case 3: Go through two attempts at powering up before being powered down
 # Bike 5 with Camp 1 at 118.330937 -32.657042
-replayIncrement = 5
-replayMinTimestamp = 545353900
+# replayIncrement = 5
+# replayMinTimestamp = 545353900
 
 
 ## Camps
@@ -59,11 +59,11 @@ camps = [
         # "lon": 118.329704,
         # "lat": -32.660247,
         # Test Case 2
-        # "lon": 118.332082,
-        # "lat": -32.657582,
+        "lon": 118.332082,
+        "lat": -32.657582,
         # Test Case 3
-        "lon": 118.330937,
-        "lat": -32.657042,
+        # "lon": 118.330937,
+        # "lat": -32.657042,
         "current_frame": 0,
         "current_state": "POWERED_DOWN",
         "states": {
