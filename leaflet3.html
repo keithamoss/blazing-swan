@@ -1,0 +1,132 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Blazing Swan</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="leaflet.css" />
+  <script src="leaflet.js"></script>
+  <script src="leaflet.wms.js"></script>
+
+  <!-- This is overkill! -->
+  <script src="jquery-1.12.0.min.js"></script>
+
+  <script src="scripts.js"></script>
+  <script src="camps.js"></script>
+  <script src="camps.php"></script>
+  <link rel="stylesheet" href="mapserver/icons/icon2json-css-or-html.php?css" />
+
+  <style type="text/css">
+    body {
+      background-color: #000000;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body,
+    #map {
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+    }
+  </style>
+</head>
+
+<body onclick="requestFullScreen(document.body)">
+  <div id="map"></div>
+
+  <script type="text/javascript">
+    var campBikeCounts;
+
+
+    var map = L.map('map', { zoomControl: false, attributionControl: false, crs: L.CRS.EPSG4326 }).setView([-32.6592, 118.3305], 16);
+
+    // Disable drag and zoom handlers
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+
+    var wms = L.WMS.overlay("http://localhost:8001/mapserver/wms.php?foo=" + Math.random(), {
+      layers: 'bikes,church',
+      format: 'image/png',
+    }).addTo(map);
+
+    window.setInterval(function () {
+      wms.setParams({ url: "http://localhost:8001/mapserver/wms.php?foo=" + Math.random() })
+    }, 500)
+
+
+    var campIconFrames = []
+    let padToFive = number => number <= 99999 ? ("0000" + number).slice(-5) : number;
+
+    for (let camp of camps) {
+      // console.log(camp);
+      campIconFrames[camp["icon_name"]] = 0
+
+      var icon = new L.DivIcon({ className: camp["icon_name"], iconSize: [camp["icon_width"], camp["icon_height"]], iconAnchor: [camp["icon_width"] / 2, camp["icon_height"] / 2] });
+      L.marker([camp["lat"], camp["lon"]], { icon: icon }).addTo(map);
+      $("." + camp["icon_name"]).html('<img src="" width="' + camp["icon_width"] + '" height="' + camp["icon_height"] + '" class="' + camp["icon_name"] + '_0" />')
+    }
+
+    window.setInterval(function () {
+      if (campBikeCounts !== undefined) {
+        for (let camp of camps) {
+          var oldCamp = JSON.parse(JSON.stringify(camp))
+
+          if (campBikeCounts[camp["icon_name"]] > 0) {
+            if (camp["current_state"] == "POWERED_DOWN") {
+              beginPowerUpAni(camp)
+            } else if (camp["current_state"] == "POWERING_UP") {
+              tickPowerUpAni(camp)
+            } else if (camp["current_state"] == "POWERED_ON") {
+              loopPoweredOnAni(camp)
+            } else if (camp["current_state"] == "POWERING_DOWN") {
+              // Keep the animations graceful by reversing the powering down ani
+              // if bikes rejoin the camp while we're still powering down
+              reversePowerDownAni(camp)
+            }
+          } else {
+            if (camp["current_state"] == "POWERING_UP") {
+              // Keep the animations graceful by reversing the powering up ani
+              // if bikes leave the camp while we're still powering up
+              reversePowerUpAni(camp)
+            } else if (camp["current_state"] == "POWERED_ON") {
+              beginPowerDownAniASAP(camp)
+            } else if (camp["current_state"] == "POWERING_DOWN") {
+              tickPowerDownAni(camp)
+            } else if (camp["current_state"] == "POWERED_DOWN") {
+              setPoweredOffFrame(camp)
+            }
+          }
+
+          if (camp !== oldCamp) {
+            // console.log(`${camp["icon_name"]} (Bikes = ${campBikeCounts[camp["icon_name"]]}; Frame = ${camp["current_frame"]}; State = ${camp["current_state"]};`)
+          }
+
+          $("." + camp["icon_name"] + " > img").attr("class", camp["icon_name"] + "_" + camp["current_frame"]);
+        }
+
+      }
+    }, 128)
+
+    window.setInterval(function () {
+      $.ajax({
+        url: "mapserver/bike-counts.json",
+        data: {
+          "foo": Math.random()
+        },
+        success: function (data, textStatus) {
+          campBikeCounts = data
+        }
+      });
+    }, 1000)
+  </script>
+</body>
+
+</html>

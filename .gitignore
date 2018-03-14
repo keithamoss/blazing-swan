@@ -15,3 +15,5 @@ mapserver/data/
 /mapserver/log.txt
 /mapserver/ms_error.txt
 TODO.md
+.pyc
+bike-counts.json
