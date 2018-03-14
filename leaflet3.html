@@ -52,13 +52,13 @@
     map.doubleClickZoom.disable();
     map.scrollWheelZoom.disable();
 
-    var wms = L.WMS.overlay("http://localhost:8001/mapserver/wms.php?foo=" + Math.random(), {
+    var wms = L.WMS.overlay("mapserver/wms.php?foo=" + Math.random(), {
       layers: 'bikes,church',
       format: 'image/png',
     }).addTo(map);
 
     window.setInterval(function () {
-      wms.setParams({ url: "http://localhost:8001/mapserver/wms.php?foo=" + Math.random() })
+      wms.setParams({ url: "mapserver/wms.php?foo=" + Math.random() })
     }, 500)
 
 
