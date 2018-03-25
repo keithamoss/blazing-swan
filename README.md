@@ -53,7 +53,7 @@ showAnimatedChurchOfBelligerence = False
 
 With this setup run CycleSchema and open http://localhost:8000/index-mapserver.html.
 
-### Mode 3: Handle animations on the frontend
+### Mode 3: Handle animations on the frontend (Default mode)
 
 This is a new mode for 2018 that works more like a traditional web map and lets us more smoothly animate the theme camps and the Church of Belligerence. As with Mode 2, the camps will show different animations for powering up/on/down in response to bikes being nearby. In this mode we only rely on the MapServer backend to show the positions and trails of the bikes moving about.
 

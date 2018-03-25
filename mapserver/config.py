@@ -33,7 +33,7 @@ showAnimatedChurchOfBelligerence = False
 
 
 # Config for replay mode
-replayMode = True
+replayMode = False
 replayIncrement = 60  # seconds
 replayMinTimestamp = 545305309  # Default to 0. Use to limit the start time of replays until something interesting happens
 

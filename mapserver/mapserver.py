@@ -11,8 +11,8 @@ import json
 
 import config
 
-# sqlitePath = "./data/bikes.sqlite"
-sqlitePath = "./data/2017_actual/bikes.sqlite"
+sqlitePath = "./data/bikes.sqlite"
+# sqlitePath = "./data/2017_actual/bikes.sqlite"
 mapfilePath = "./bikes.map"
 mapfileTemplate = "./bikes-template.map"
 campsJSON = "./camps.json"
