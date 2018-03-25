@@ -27,9 +27,11 @@ churchFramePosition = 0
 hourIncrementStart = 0
 replayMaxTimestamp = None
 
+
 def initCamps():
     global config
     return config.camps
+
 
 def getCountOfBikesNearCamps(timestampsPerBike):
     state = {}
@@ -50,7 +52,10 @@ def getCountOfBikesNearCamps(timestampsPerBike):
 
     return state
 
-def animateCamps(camps, content, timestampsPerBike):
+
+def animateCamps(camps, content, timestampsPerBike, campLayerTemplate):
+    global config
+
     def setPoweredOffFrame():
         camp["current_state"] = "POWERED_DOWN"
         camp["current_frame"] = camp["states"]["powered_off"]["frame_start"]
@@ -58,21 +63,21 @@ def animateCamps(camps, content, timestampsPerBike):
     def beginPowerUpAni():
         camp["current_state"] = "POWERING_UP"
         camp["current_frame"] = camp["states"]["powering_up"]["frame_start"]
-    
+
     def tickPowerUpAni():
         camp["current_state"] = "POWERING_UP"
         camp["current_frame"] += 1
 
         if camp["current_frame"] > camp["states"]["powering_up"]["frame_end"]:
             camp["current_state"] = "POWERED_ON"
-    
+
     def reversePowerUpAni():
         camp["current_state"] = "POWERING_UP"
         camp["current_frame"] -= 1
 
         if camp["current_frame"] <= camp["states"]["powering_up"]["frame_start"]:
             camp["current_state"] = "POWERED_DOWN"
-    
+
     def loopPoweredOnAni():
         camp["current_state"] = "POWERED_ON"
         camp["current_frame"] += 1
@@ -83,7 +88,7 @@ def animateCamps(camps, content, timestampsPerBike):
     def beginPowerDownAni():
         camp["current_state"] = "POWERING_DOWN"
         camp["current_frame"] = camp["states"]["powering_down"]["frame_start"]
-    
+
     def beginPowerDownAniASAP():
         halfwayPoint = camp["states"]["powered_on"]["frame_start"] + ((camp["states"]["powered_on"]["frame_end"] - camp["states"]["powered_on"]["frame_start"]) / 2)
 
@@ -98,20 +103,20 @@ def animateCamps(camps, content, timestampsPerBike):
 
             if camp["current_frame"] > camp["states"]["powered_on"]["frame_end"]:
                 beginPowerDownAni()
-    
+
     # def beginPowerDownAniWhenNextLoopFinishes():
     #     camp["current_frame"] += 1
-    
+
     #     if camp["current_frame"] > camp["states"]["powered_on"]["frame_end"]:
     #         beginPowerDownAni()
-    
+
     def tickPowerDownAni():
         camp["current_state"] = "POWERING_DOWN"
         camp["current_frame"] += 1
 
         if camp["current_frame"] >= camp["states"]["powering_down"]["frame_end"]:
             camp["current_state"] = "POWERED_DOWN"
-    
+
     def reversePowerDownAni():
         camp["current_state"] = "POWERING_DOWN"
         camp["current_frame"] -= 1
@@ -119,7 +124,6 @@ def animateCamps(camps, content, timestampsPerBike):
         if camp["current_frame"] <= camp["states"]["powering_down"]["frame_start"]:
             camp["current_state"] = "POWERED_ON"
             camp["current_frame"] = camp["states"]["powered_on"]["frame_start"]
-
 
     bikeCount = getCountOfBikesNearCamps(timestampsPerBike)
     # print bikeCount
@@ -129,23 +133,22 @@ def animateCamps(camps, content, timestampsPerBike):
         with open(bikeCountJSON, "w") as f:
             json.dump(bikeCount, f)
 
+    campLayerClasses = []
     for camp in camps:
-        # Set the position of the camp (during dev only?)
-        campStatusPlaceholderString = "{%s_STATUS}" % camp["name"].upper()
-        campLatPlaceholderString = "{%s_LAT}" % camp["name"].upper()
-        campLonPlaceholderString = "{%s_LON}" % camp["name"].upper()
-        content = content.replace(campLatPlaceholderString, str(camp["lat"]))
-        content = content.replace(campLonPlaceholderString, str(camp["lon"]))
+        campLayer = campLayerTemplate
+        campLayer = campLayer.replace("{CAMP_NAME}", camp["name"].upper())
+        campLayer = campLayer.replace("{CAMP_LON}", str(camp["lon"]))
+        campLayer = campLayer.replace("{CAMP_LAT}", str(camp["lat"]))
+        campLayer = campLayer.replace("{CAMP_BASE_URL}", camp["base_url"])
+        campLayer = campLayer.replace("{CAMP_ICON_WIDTH}", str(camp["icon_width"]))
 
-        
         if config.showAnimatedCamps == False:
-            content = content.replace(campStatusPlaceholderString, "OFF")
-
-            campFramePlaceholderString = "{%s_FRAME_NUM}" % camp["name"].upper()
-            content = content.replace(campFramePlaceholderString, "00000")
+            campLayer = campLayer.replace("{CAMP_STATUS}", "OFF")
+            campLayer = campLayer.replace("{CAMP_FRAME_NUM}", "00000")
 
         else:
-            content = content.replace(campStatusPlaceholderString, "DEFAULT")
+            campLayer = campLayer.replace("{CAMP_STATUS}", "DEFAULT")
+
             if bikeCount[camp["name"]] > 0:
                 if camp["current_state"] == "POWERED_DOWN":
                     beginPowerUpAni()
@@ -169,22 +172,29 @@ def animateCamps(camps, content, timestampsPerBike):
                 elif camp["current_state"] == "POWERED_DOWN":
                     setPoweredOffFrame()
 
-            campFramePlaceholderString = "{%s_FRAME_NUM}" % camp["name"].upper()
-            content = content.replace(campFramePlaceholderString, str(camp["current_frame"]).zfill(5))
+            campLayer = campLayer.replace("{CAMP_FRAME_NUM}", str(camp["current_frame"]).zfill(5))
 
-            print "%s (Bikes = %s; Frame = %s; State = %s)" % (camp["name"], bikeCount[camp["name"]], camp["current_frame"], camp["current_state"])
+            if config.debug:
+                print "%s (Bikes = %s; Frame = %s; State = %s)" % (camp["name"], bikeCount[camp["name"]], camp["current_frame"], camp["current_state"])
+
+        campLayerClasses.append(campLayer)
+
+    content = content.replace("{CURRENT_CAMP_LOCATIONS}", "".join(campLayerClasses))
 
     return content
+
 
 def getMinTimestampAllBikes():
     sql = "SELECT MIN(timestamp) FROM bikes"
     cur.execute(sql)
     return cur.fetchone()[0]
 
+
 def getMaxTimestampAllBikes():
     sql = "SELECT MAX(timestamp) FROM bikes"
     cur.execute(sql)
     return cur.fetchone()[0]
+
 
 def getCurrentBikePositions():
     sql = "SELECT bikeid, ST_X(PointN(geom, 2)), ST_Y(PointN(geom, 2)) FROM bikes GROUP BY bikeid ORDER BY timestamp DESC"
@@ -199,9 +209,11 @@ def getCurrentBikePositions():
     return bikePositions
 
 # Get min and max timestamps per bike
+
+
 def getBikeTimestamps():
     global hourIncrementStart
-    
+
     timestampsPerBike = {}
     # timestampsPerBikeFoo = {}
     # sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes GROUP BY bikeid"
@@ -211,7 +223,7 @@ def getBikeTimestamps():
     #         "max": row[2],
     #         "minThreshold": row[2] - (config.latestTrailsThresholdHours * 60 * 60) - (60 * 60 * hourIncrementStart)
     #     }
-    
+
     # for bikeid in timestampsPerBikeFoo:
     #     sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes WHERE bikeid = %s AND timestamp >= %s GROUP BY bikeid" % (bikeid, timestampsPerBikeFoo[bikeid]["minThreshold"])
     #     # sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp) FROM bikes WHERE bikeid = %s GROUP BY bikeid" % (bikeid)
@@ -222,12 +234,12 @@ def getBikeTimestamps():
     #         "min": res[1],
     #         "max": res[2],
     #     }
-    
+
     timestampsPerBike = {}
     sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp), ST_AsText(EndPoint(geom)) FROM bikes GROUP BY bikeid"
     if config.replayMode:
         sql = "SELECT bikeid, MIN(timestamp), MAX(timestamp), ST_AsText(EndPoint(geom)) FROM bikes WHERE timestamp <= %d GROUP BY bikeid" % (replayMaxTimestamp)
-        
+
     for row in cur.execute(sql):
         timestampsPerBike[row[0]] = {
             "min": row[1],
@@ -237,6 +249,8 @@ def getBikeTimestamps():
     return timestampsPerBike
 
 # Create a mapfile with the correct styling rules for the current point in time
+
+
 def createMapfile():
     global mapfilePath, mapfileTemplate, config, churchFramePosition
 
@@ -244,7 +258,7 @@ def createMapfile():
         with open(mapfileTemplate, "r") as f:
             template = f.read()
         return template
-    
+
     # RGB
     bikeStyles = {
         1: {
@@ -349,6 +363,26 @@ def createMapfile():
         END
     """
 
+    campLayerTemplate = """
+        LAYER
+            NAME {CAMP_NAME}
+            TYPE POINT
+            STATUS {CAMP_STATUS}
+            FEATURE
+                POINTS
+                    {CAMP_LON} {CAMP_LAT}
+                END # End Points
+            END # End Feature
+            CLASS
+                NAME "{CAMP_NAME}"
+                STYLE
+                    SYMBOL "./icons/{CAMP_BASE_URL}_{CAMP_FRAME_NUM}.png"
+                    SIZE {CAMP_ICON_WIDTH}
+                END
+            END
+        END
+    """
+
     bikeClasses = []
 
     timestampsPerBike = getBikeTimestamps()
@@ -405,7 +439,7 @@ def createMapfile():
                     if stepSize < (60 * 60 * 3):
                         haltStepping = True
                         # stepSize = (60 * 60 * 3)
-                        
+
                     stepsInHours.append(float(stepSize) / (60 * 60))
 
                     if haltStepping:
@@ -413,7 +447,6 @@ def createMapfile():
                         stepsInHours.append(float(timestampDiffRemaining) / (60 * 60))
                         break
                 stepsInHours = list(reversed(stepsInHours))
-
 
                 stepStartMaxTimestamp = latestMinTimestamp
                 stepStartOpacity = opacityStepMaxActual
@@ -445,7 +478,7 @@ def createMapfile():
         content = template
 
         content = content.replace("{SQLITE_DB_PATH}", sqlitePath.replace("./data/", ""))
-        
+
         # Only the default bikes template with opacity fading needs {BIKE_CLASSES}
         if mapfileTemplate == "./bikes-template.map":
             content = content.replace("{BIKE_CLASSES}", "".join(bikeClasses))
@@ -470,18 +503,20 @@ def createMapfile():
         else:
             content = content.replace("{CURRENT_BIKE_LOCATIONS}", "")
 
-
         # Church of Belligerence
+        if config.showAnimatedChurchOfBelligerence == False:
+            content = content.replace("{CHURCH_STATUS}", "OFF")
+        else:
+            content = content.replace("{CHURCH_STATUS}", "DEFAULT")
         content = content.replace("{CHURCH_FRAME_NUM}", str(churchFramePosition).zfill(5))
         churchFramePosition += 1
         if churchFramePosition > churchFrameNum:
             churchFramePosition = 0
-        
+
         # Animate theme camps if bikes are close by
-        content = animateCamps(camps, content, timestampsPerBike)
+        content = animateCamps(camps, content, timestampsPerBike, campLayerTemplate)
 
         f.write(content)
-
 
 
 if not os.path.isfile(sqlitePath):
@@ -494,13 +529,13 @@ else:
     # for row in cur.execute("SELECT *, ST_AsText(geom) FROM bikes GROUP BY bikeid ORDER BY timestamp DESC"):
     #     print(row)
     # exit()
-    
+
     camps = initCamps()
-    
+
     if config.showAnimatedCamps == False:
         with open(campsJSON, "w") as f:
             json.dump(camps, f)
-    
+
     while True:
         mapserverOK = None
         hourIncrementStart += 1
@@ -514,7 +549,7 @@ else:
                     replayMaxTimestamp = getMinTimestampAllBikes() + config.replayIncrement
             else:
                 replayMaxTimestamp += config.replayIncrement
-            
+
             if replayMaxTimestamp > maxTimestampAllBikes:
                 print "Fin"
                 exit()
@@ -526,7 +561,7 @@ else:
 
         if os.path.isfile("./bikes.tmp.png"):
             os.remove("./bikes.tmp.png")
-        
+
         with open("./bikes.tmp.png", "w+") as f:
             ret = check_output(["mapserv", "-nh", "QUERY_STRING=map=" + mapfilePath + "&mode=map"])
             type = imghdr.what(None, h=ret)
@@ -548,7 +583,7 @@ else:
 
         # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
         # tl;dr This doens't work on Windows or across different file systems.
-        # If running on Windows we can't guarnatee atomic renaming, so comment this line (which throws an error) 
+        # If running on Windows we can't guarnatee atomic renaming, so comment this line (which throws an error)
         # and uncomment the lines directly below.
         os.rename("./bikes.tmp.png", "./bikes.png")
 
@@ -560,7 +595,7 @@ else:
         # Only snapshot if everything is OK in MapServer-land
         if mapserverOK == True:
             # Always take a snapshot the first time
-            if lastSnapshotTimestamp == None or (datetime.utcnow() - lastSnapshotTimestamp) >  timedelta(minutes=config.snapshotInterval):
+            if lastSnapshotTimestamp == None or (datetime.utcnow() - lastSnapshotTimestamp) > timedelta(minutes=config.snapshotInterval):
                 print "Snapshot taken!"
                 lastSnapshotTimestamp = datetime.utcnow()
 
@@ -570,11 +605,11 @@ else:
                     os.remove("./snapshots/map-latest.png")
                 copyfile("./bikes.png", "./snapshots/map-latest.png")
 
-            # print "Map generated OK %s" % (time.strftime("%Y-%m-%d-%H-%M-%S"))
-        
+            print "Map generated OK %s" % (time.strftime("%Y-%m-%d-%H-%M-%S"))
+
         sys.stdout.flush()
         time.sleep(config.sleepTime)
 
         # exit()
-    
+
     conn.close()

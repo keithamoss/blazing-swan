@@ -1,9 +1,12 @@
-## Master Control
-sleepTime = 0.1 # seconds - time to sleep after generating a map image
-snapshotInterval = 10 # minutes - how often snapshots are saved to ./snapshots
+# Controls how much gets printed to the console
+debug = False
 
-## Config for styling the bikes
-showCurrentBikePositions = True
+# Master Control
+sleepTime = 0.5  # seconds - time to sleep after generating a map image
+snapshotInterval = 10  # minutes - how often snapshots are saved to ./snapshots
+
+# Config for styling the bikes
+showCurrentBikePositions = False
 
 # We have three different viz options
 # Set noSteps = True to have all trails at 70% opacity.
@@ -15,26 +18,27 @@ showCurrentBikePositions = True
 noSteps = False
 onlyTwoSteps = False
 
-latestTrailsThresholdHours = 3 # Number of hours for trails to appear at 70% opacity
+latestTrailsThresholdHours = 3  # Number of hours for trails to appear at 70% opacity
 
 # Trails older than `latestTrailsThresholdHours` hours will fade away according to the number of steps and opacity range given here
-fadingTrailsSteps = 8 # Number of buckets to fade opacity through >= 3 hours old
+fadingTrailsSteps = 8  # Number of buckets to fade opacity through >= 3 hours old
 opacityStepMin = 10
 opacityStepMax = 60
 
 
-## Config for camp animation
-showAnimatedCamps = False
+# Config for camp animation
 geofenceRadiusInMetres = 50
+showAnimatedCamps = False
+showAnimatedChurchOfBelligerence = False
 
 
-## Config for replay mode
+# Config for replay mode
 replayMode = True
-replayIncrement = 60 # seconds
-replayMinTimestamp = 545305309 # Default to 0. Use to limit the start time of replays until something interesting happens
+replayIncrement = 60  # seconds
+replayMinTimestamp = 545305309  # Default to 0. Use to limit the start time of replays until something interesting happens
 
 
-## Config For Testing Only
+# Config For Testing Only
 # Test Case 1: Pop-up and then Pop-away after 4 frames
 # Bike 4 with Camp 1 at 118.329704 -32.660247
 # replayIncrement = 20
@@ -51,11 +55,28 @@ replayMinTimestamp = 545307309
 # replayMinTimestamp = 545353900
 
 
-## Camps
+# Camps
 camps = [
     {
+        "name": "church_of_belligerence",
+        "base_url": "church_sim_png/church_sim",
+        "icon_width": 120,  # 696 x 688 was actual size
+        "icon_height": 118,
+        "lon": 118.332136,
+        "lat": -32.661991,
+        "current_frame": 0,
+        "current_state": "POWERED_ON",
+        "triggered_by_bikes": False,
+        "states": {
+            "powered_on": {
+                "frame_start": 0,
+                "frame_end": 19,
+            },
+        },
+    },
+    {
         "name": "camp1",
-        "base_url": "camp1/campfire_",
+        "base_url": "camp1/campfire",
         "icon_width": 64,
         "icon_height": 64,
         # Test Case 1
@@ -69,6 +90,7 @@ camps = [
         # "lat": -32.657042,
         "current_frame": 0,
         "current_state": "POWERED_DOWN",
+        "triggered_by_bikes": True,
         "states": {
             "powered_off": {
                 "frame_start": 0,

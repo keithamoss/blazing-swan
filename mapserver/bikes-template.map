@@ -72,7 +72,7 @@ MAP
     LAYER
         NAME church
         TYPE POINT
-        STATUS DEFAULT
+        STATUS {CHURCH_STATUS}
         FEATURE
             POINTS
                 118.332136 -32.661991
@@ -90,24 +90,26 @@ MAP
         END
     END
 
-    LAYER
-        NAME camp1
-        TYPE POINT
-        STATUS {CAMP1_STATUS}
-        FEATURE
-            POINTS
-                {CAMP1_LON} {CAMP1_LAT}
-            END # End Points
-        END # End Feature
-        CLASS
-            NAME "Theme Camp 1"
-            STYLE
-                SYMBOL "./icons/camp1/campfire_{CAMP1_FRAME_NUM}.png"
-                SIZE 64
-                # SYMBOL "circle"
-                # COLOR 227 172 208
-                # OPACITY 60
-            END
-        END
-    END
+    {CURRENT_CAMP_LOCATIONS}
+
+    # LAYER
+    #     NAME camp1
+    #     TYPE POINT
+    #     STATUS {CAMP1_STATUS}
+    #     FEATURE
+    #         POINTS
+    #             {CAMP1_LON} {CAMP1_LAT}
+    #         END # End Points
+    #     END # End Feature
+    #     CLASS
+    #         NAME "Theme Camp 1"
+    #         STYLE
+    #             SYMBOL "./icons/camp1/campfire_{CAMP1_FRAME_NUM}.png"
+    #             SIZE 64
+    #             # SYMBOL "circle"
+    #             # COLOR 227 172 208
+    #             # OPACITY 60
+    #         END
+    #     END
+    # END
 END # MAP
