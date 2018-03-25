@@ -1,5 +1,4 @@
 <?php
-// require_once "../../config.php";
 $camps = json_decode(file_get_contents("../camps.json"));
 
 $json = [];
@@ -11,11 +10,23 @@ foreach($camps as $icon) {
     "frames" => new stdClass(),
   ];
 
-  for($frame = $icon->states->powered_off->frame_start; $frame <= $icon->states->powering_down->frame_end; $frame++) {
-    $frame_number = str_pad($frame, 5, "0", STR_PAD_LEFT);
-    $frame_url = $icon->base_url . $frame_number . ".png";
-  
-    $json[$icon->name]["frames"]->$frame = "data:image/png;base64," . base64_encode(file_get_contents($frame_url));
+  // Camp is affected by bikes - apply animation logic for powering up/on/down/off
+  if($icon->triggered_by_bikes === true) {
+    for($frame = $icon->states->powered_off->frame_start; $frame <= $icon->states->powering_down->frame_end; $frame++) {
+      $frame_number = str_pad($frame, 5, "0", STR_PAD_LEFT);
+      $frame_url = $icon->base_url . "_" . $frame_number . ".png";
+    
+      $json[$icon->name]["frames"]->$frame = "data:image/png;base64," . base64_encode(file_get_contents($frame_url));
+    }
+
+  } else {
+  // Camp is not affected by bikes - just loop its powered on animation
+    for($frame = $icon->states->powered_on->frame_start; $frame <= $icon->states->powered_on->frame_end; $frame++) {
+      $frame_number = str_pad($frame, 5, "0", STR_PAD_LEFT);
+      $frame_url = $icon->base_url . "_" . $frame_number . ".png";
+    
+      $json[$icon->name]["frames"]->$frame = "data:image/png;base64," . base64_encode(file_get_contents($frame_url));
+    }
   }
 }
 
